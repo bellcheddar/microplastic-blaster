@@ -1,0 +1,1960 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>MicroPlastic Blaster - Elora Therapeutics</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; }
+    body {
+      background: #0a0a2e;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      color: #e0f2ff;
+      display: flex;
+      flex-direction: column;
+      min-height: 100dvh;
+    }
+
+    #page {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+    }
+
+    #game-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 100vw;
+      height: calc(100vw * 0.75);
+      min-height: 360px;
+      margin: 0 auto;
+      background: #020617;
+      overflow: hidden;
+      flex: 1 1 auto;
+    }
+
+    @media (max-width: 700px) {
+      #game-wrapper {
+        height: auto;
+        min-height: 0;
+      }
+    }
+
+    canvas {
+      border: none;
+      border-radius: 8px;
+      box-shadow: 0 0 30px rgba(0, 0, 0, 0.6);
+      cursor: crosshair;
+      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    .ui-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      padding: 10px;
+    }
+
+    .start-screen, .game-over-screen {
+      background: rgba(10, 10, 46, 0.95);
+      border: none;
+      border-radius: 16px;
+      padding: 16px 18px;
+      text-align: center;
+      color: white;
+      pointer-events: auto;
+      max-width: 520px;
+      width: 100%;
+      max-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .game-over-screen { display: none; }
+
+    .start-screen-header {
+      flex-shrink: 0;
+      margin-bottom: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .start-screen-inner {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .start-screen-footer {
+      flex-shrink: 0;
+      margin-top: 6px;
+    }
+
+    h1 {
+      font-size: 2.0em;
+      color: #00e5ff;
+      margin: 0;
+      text-shadow: 0 0 20px rgba(0, 229, 255, 0.5);
+    }
+
+    .subtitle { color: #a0a0d0; font-size: 0.95em; margin: 0; }
+    .narrative { color: #c0c0e0; font-size: 0.9em; margin-bottom: 6px; }
+
+    .info-text {
+      color: #c0c0e0;
+      font-size: 0.85em;
+      line-height: 1.5;
+      margin: 8px 0;
+    }
+
+    .btn {
+      background: linear-gradient(135deg, #00e5ff, #00b8d4);
+      color: #0a0a2e;
+      border: none;
+      padding: 10px 26px;
+      font-size: 1.0em;
+      font-weight: bold;
+      border-radius: 30px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 20px rgba(0, 229, 255, 0.5);
+    }
+
+    .logo-text { font-size: 0.8em; color: #7070a0; margin-top: 6px; }
+    .logo-text a { color: #00e5ff; text-decoration: none; }
+
+    .final-score { font-size: 2em; color: #00e5ff; }
+
+    .fact-box {
+      background: rgba(0, 229, 255, 0.1);
+      border-left: 3px solid #00e5ff;
+      padding: 8px 12px;
+      margin: 6px 0;
+      text-align: left;
+      font-size: 0.8em;
+      color: #c0c0e0;
+      border-radius: 0 8px 8px 0;
+    }
+
+    .go-elora-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(0, 229, 255, 0.6);
+      background: rgba(0, 0, 0, 0.3);
+      color: #e0f7ff;
+      font-size: 0.8em;
+      text-decoration: none;
+    }
+    .go-elora-link span.pill {
+      background: linear-gradient(135deg, #00e5ff, #00b8d4);
+      color: #00111a;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.7em;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+    }
+
+    .round-message {
+      margin-top: 12px;
+      font-size: 0.85em;
+      color: #c0c0e0;
+      font-style: italic;
+    }
+
+    @media (max-width: 700px) {
+      .start-screen, .game-over-screen {
+        max-width: 94vw;
+        padding: 12px 12px 10px 12px;
+      }
+      h1 { font-size: 1.6em; }
+      .subtitle { font-size: 0.9em; }
+      .info-text { font-size: 0.8em; }
+      .btn { padding: 8px 20px; font-size: 0.95em; }
+
+      .pf-avatar {
+        width: 55px;
+        height: 55px;
+      }
+      .kill-chip {
+        font-size: 0.8em;
+        padding: 4px 9px;
+      }
+      .kill-icon {
+        width: 20px;
+        height: 20px;
+      }
+      .pf-activations {
+        font-size: 0.86em;
+      }
+      .pf-core-item {
+        font-size: 0.82em;
+        padding: 4px 10px;
+      }
+      .hud-message {
+        font-size: 0.8em;
+      }
+    }
+
+    #powerup-banner {
+      position: absolute;
+      top: 45%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 0 0, rgba(34, 211, 238, 0.35), rgba(79, 70, 229, 0.25));
+      color: #e0f2ff;
+      font-size: 0.7em;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      box-shadow: 0 0 8px rgba(56, 189, 248, 0.35), 0 0 18px rgba(59, 130, 246, 0.3);
+      border: 1px solid rgba(191, 219, 254, 0.4);
+      display: none;
+      pointer-events: none;
+      text-align: center;
+      z-index: 20;
+      opacity: 0.6;
+      animation: bannerPulse 1.4s ease-in-out infinite alternate;
+    }
+
+    #vc-banner {
+      position: absolute;
+      top: 55%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 0 0, rgba(250, 204, 21, 0.35), rgba(252, 211, 77, 0.25));
+      color: #fefce8;
+      font-size: 0.7em;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      box-shadow: 0 0 8px rgba(250, 204, 21, 0.35), 0 0 18px rgba(250, 204, 21, 0.3);
+      border: 1px solid rgba(254, 249, 195, 0.4);
+      display: none;
+      pointer-events: none;
+      text-align: center;
+      z-index: 21;
+      opacity: 0.8;
+      animation: bannerPulse 1.4s ease-in-out infinite alternate;
+    }
+
+    @keyframes bannerPulse {
+      from {
+        transform: translate(-50%, -50%) scale(0.95);
+        box-shadow: 0 0 6px rgba(56, 189, 248, 0.25), 0 0 14px rgba(59, 130, 246, 0.25);
+        opacity: 0.5;
+      }
+      to {
+        transform: translate(-50%, -50%) scale(1.02);
+        box-shadow: 0 0 12px rgba(56, 189, 248, 0.45), 0 0 26px rgba(129, 140, 248, 0.4);
+        opacity: 0.7;
+      }
+    }
+
+    #playfield-hud-top {
+      position: absolute;
+      top: 6px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(780px, calc(100% - 12px));
+      display: none;
+      pointer-events: none;
+      z-index: 30;
+    }
+
+    #playfield-scoreboard {
+      background: rgba(0, 0, 0, 0.55);
+      border: none;
+      border-radius: 16px;
+      padding: 6px 10px;
+      color: #e0f7ff;
+      box-shadow: 0 0 18px rgba(0, 0, 0, 0.6);
+      pointer-events: none;
+    }
+
+    .pf-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+
+    .pf-title {
+      font-size: 0.78em;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #7dd3fc;
+      margin-bottom: 4px;
+    }
+
+    .pf-left {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1 1 230px;
+      min-width: 200px;
+    }
+
+    .pf-avatars {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .pf-avatar {
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 2px solid rgba(56, 189, 248, 0.9);
+      box-shadow: 0 0 14px rgba(56, 189, 248, 0.65);
+      background: #111827;
+    }
+
+    .pf-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    .pf-activations {
+      font-size: 0.82em;
+      color: #e5e7eb;
+      white-space: nowrap;
+    }
+
+    .pf-activations strong { color: #facc15; }
+
+    .pf-right {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex: 1 1 320px;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .kill-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      font-size: 0.76em;
+      color: #e0f7ff;
+      white-space: nowrap;
+    }
+
+    .kill-icon {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      position: relative;
+      overflow: hidden;
+      border-radius: 50%;
+      background: #111827;
+      flex-shrink: 0;
+    }
+    .kill-icon-inner { position: absolute; inset: 0; }
+
+    .kill-icon.PP .kill-icon-inner {
+      background: #ff4757;
+      clip-path: polygon(50% 0%, 90% 20%, 80% 60%, 40% 100%, 10% 70%, 20% 20%);
+      border-radius: 0;
+    }
+    .kill-icon.PE .kill-icon-inner {
+      background: #ffa502;
+      border-radius: 50%;
+      box-shadow: inset 0 0 0 2px rgba(0,0,0,0.4);
+    }
+    .kill-icon.PS .kill-icon-inner { background: #7bed9f; border-radius: 50%; }
+    .kill-icon.PET .kill-icon-inner {
+      background: #a29bfe;
+      box-shadow: inset 0 0 0 2px rgba(0,0,0,0.4);
+      border-radius: 0;
+    }
+
+    #playfield-hud-bottom-wrapper {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      background: #020617;
+      padding: 4px 0;
+      flex: 0 0 auto;
+    }
+
+    #playfield-corehud {
+      background: rgba(15, 23, 42, 0.9);
+      border-radius: 14px;
+      border: none;
+      padding: 5px 8px;
+      display: none;
+      pointer-events: auto;
+      width: min(780px, calc(100% - 12px));
+    }
+
+    .pf-core-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: center;
+    }
+
+    .pf-core-item {
+      background: rgba(15, 23, 42, 0.9);
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: none;
+      font-size: 0.78em;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      color: #e0f2ff;
+      white-space: nowrap;
+    }
+
+    .pf-core-item button {
+      background: transparent;
+      border: none;
+      color: inherit;
+      cursor: pointer;
+      font-size: 1em;
+      padding: 0;
+    }
+
+    #hud-below {
+      flex: 0 0 auto;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 4px 0 6px 0;
+      background: #020617;
+    }
+
+    .hud-message {
+      text-align: center;
+      font-size: 0.8em;
+      color: #c0c0e0;
+      min-height: 1.2em;
+      max-width: 800px;
+      width: min(780px, 100vw - 12px);
+      margin: 0;
+    }
+
+    @media (max-width: 700px) {
+      .hud-message {
+        font-size: 0.8em;
+        width: calc(100vw - 12px);
+      }
+      .pf-activations { font-size: 0.86em; }
+      .kill-chip { font-size: 0.8em; padding: 4px 9px; }
+      .pf-core-item { font-size: 0.82em; padding: 4px 10px; }
+    }
+
+    .shake-vc {
+      animation: vcShake 0.4s ease-in-out;
+    }
+
+    @keyframes vcShake {
+      0% { transform: translate(-50%, 0); }
+      20% { transform: translate(-50%, -4px); }
+      40% { transform: translate(-50%, 4px); }
+      60% { transform: translate(-50%, -4px); }
+      80% { transform: translate(-50%, 4px); }
+      100% { transform: translate(-50%, 0); }
+    }
+
+    #vc-flash {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at center, rgba(250, 204, 21, 0.9), rgba(15, 23, 42, 0.95));
+      opacity: 0;
+      pointer-events: none;
+      z-index: 999;
+      transition: opacity 0.15s ease-out;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="vc-flash"></div>
+
+  <div id="page">
+    <div id="game-wrapper">
+      <canvas id="gameCanvas"></canvas>
+
+      <div id="playfield-hud-top">
+        <div id="playfield-scoreboard">
+          <div class="pf-title">Microplastics Removed + Powerups</div>
+          <div class="pf-row">
+            <div class="pf-left">
+              <div class="pf-avatars">
+                <a href="https://www.linkedin.com/in/marccdeller/" target="_blank" rel="noopener noreferrer" class="pf-avatar">
+                  <img src="marc.png" alt="Marc">
+                </a>
+                <a href="https://www.linkedin.com/in/paulswartzendruber/" target="_blank" rel="noopener noreferrer" class="pf-avatar">
+                  <img src="paul.png" alt="Paul">
+                </a>
+                <div class="pf-avatar" style="display:flex;align-items:center;justify-content:center;background:#1f2937;border-color:#facc15;">
+                  <span style="font-size:1.6em;">💰</span>
+                </div>
+              </div>
+              <div class="pf-activations">
+                Marc <strong id="pf-marc-activations">0</strong> ·
+                Paul <strong id="pf-paul-activations">0</strong> ·
+                VC Coins <strong id="pf-vc-activations">0</strong>
+              </div>
+            </div>
+            <div class="pf-right">
+              <span class="kill-chip"><span class="kill-icon PET"><span class="kill-icon-inner"></span></span> PET <span id="pf-kill-PET">0</span></span>
+              <span class="kill-chip"><span class="kill-icon PS"><span class="kill-icon-inner"></span></span> PS <span id="pf-kill-PS">0</span></span>
+              <span class="kill-chip"><span class="kill-icon PE"><span class="kill-icon-inner"></span></span> PE <span id="pf-kill-PE">0</span></span>
+              <span class="kill-chip"><span class="kill-icon PP"><span class="kill-icon-inner"></span></span> PP <span id="pf-kill-PP">0</span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="powerup-banner"><span><strong>Elora Therapeutics</strong> Powerup!</span></div>
+      <div id="vc-banner"><span><strong>Disease Progression Slowed Due to VC Funding.</strong></span></div>
+
+      <div class="ui-overlay" id="ui-overlay">
+        <div id="start-screen" class="start-screen">
+          <div class="start-screen-header">
+            <button class="btn" onclick="startGame()">Launch MicroPlastic Blaster!</button>
+            <p class="subtitle">Deploy Enzymes. Destroy Microplastics. Save the Body.</p>
+          </div>
+          <div class="start-screen-inner">
+            <p class="narrative">You're the body's enzyme defense, stopping harmful microplastics before they damage cells.</p>
+            <div class="fact-box">
+              <strong>Did you know?</strong> Humans ingest ~5 grams of microplastic per week—roughly the weight of a credit card.
+              Elora Therapeutics is developing the first FDA-targeted enzyme therapy to remove them.
+            </div>
+            <p class="info-text">
+              <strong>Click</strong> to launch enzyme blasts at microplastic particles<br>
+              <strong>Protect</strong> the cell from incoming microplastics<br>
+              <strong>Collect</strong> power-ups to boost your enzyme potency<br>
+              <strong>Survive</strong> as long as you can and set a high score!
+            </p>
+          </div>
+          <div class="start-screen-footer">
+            <p class="logo-text">
+              A game by <a href="https://www.eloratherapeutics.com" target="_blank">Elora Therapeutics</a><br>
+              First-in-class enzyme therapy to remove microplastics from humans
+            </p>
+          </div>
+        </div>
+
+        <div id="game-over-screen" class="game-over-screen">
+          <h1>Cell Overwhelmed!</h1>
+          <p class="subtitle">The microplastics broke through your enzyme defense</p>
+          <p id="final-score" class="final-score">0</p>
+          <p style="color:#a0a0d0">Microplastics Destroyed</p>
+          <div id="level-reached" style="color:#4ecdc4; margin:8px 0"></div>
+
+          <div style="margin:14px auto 6px auto; max-width:520px; font-size:0.8em; color:#c0c0e0;">
+            <table style="width:100%; border-collapse:collapse;">
+              <tr>
+                <th colspan="4" style="text-align:center; padding:4px 0;">Leaderboard & Kill Breakdown</th>
+              </tr>
+              <tr>
+                <th style="text-align:left; padding:2px 0;">Rank</th>
+                <th style="text-align:right; padding:2px 0;">Score</th>
+                <th style="text-align:right; padding:2px 0;">Level</th>
+                <th style="text-align:right; padding:2px 0;">Date</th>
+              </tr>
+              <tbody id="leaderboard-rows"></tbody>
+
+              <tr>
+                <td colspan="4" style="padding-top:8px; text-align:left;"><strong>Microplastic Kill Breakdown</strong></td>
+              </tr>
+              <tr>
+                <td colspan="3" style="text-align:left; padding:2px 0;">
+                  <span class="kill-icon PET"><span class="kill-icon-inner"></span></span>
+                  Polyethylene Terephthalate (PET)
+                </td>
+                <td style="text-align:right; padding:2px 0;" id="final-kill-PET">0</td>
+              </tr>
+              <tr>
+                <td colspan="3" style="text-align:left; padding:2px 0;">
+                  <span class="kill-icon PS"><span class="kill-icon-inner"></span></span>
+                  Polystyrene (PS)
+                </td>
+                <td style="text-align:right; padding:2px 0;" id="final-kill-PS">0</td>
+              </tr>
+              <tr>
+                <td colspan="3" style="text-align:left; padding:2px 0;">
+                  <span class="kill-icon PE"><span class="kill-icon-inner"></span></span>
+                  Polyethylene (PE)
+                </td>
+                <td style="text-align:right; padding:2px 0;" id="final-kill-PE">0</td>
+              </tr>
+              <tr>
+                <td colspan="3" style="text-align:left; padding:2px 0;">
+                  <span class="kill-icon PP"><span class="kill-icon-inner"></span></span>
+                  Polypropylene (PP)
+                </td>
+                <td style="text-align:right; padding:2px 0;" id="final-kill-PP">0</td>
+              </tr>
+
+              <tr>
+                <td colspan="4" style="padding-top:8px; text-align:left;"><strong>Power-up Activations</strong></td>
+              </tr>
+              <tr>
+                <td colspan="3" style="text-align:left; padding:2px 0;">Marc power-ups</td>
+                <td style="text-align:right; padding:2px 0;" id="final-marc-activations">0</td>
+              </tr>
+              <tr>
+                <td colspan="3" style="text-align:left; padding:2px 0;">Paul power-ups</td>
+                <td style="text-align:right; padding:2px 0;" id="final-paul-activations">0</td>
+              </tr>
+              <tr>
+                <td colspan="3" style="text-align:left; padding:2px 0;">VC Coins collected</td>
+                <td style="text-align:right; padding:2px 0;" id="final-vc-activations">0</td>
+              </tr>
+
+              <tr>
+                <td colspan="4" style="padding-top:8px;">
+                  <div style="display:flex; justify-content:center; gap:24px; flex-wrap:wrap;">
+                    <div style="text-align:center;">
+                      <a href="https://www.linkedin.com/in/marccdeller/" target="_blank" rel="noopener noreferrer" style="text-decoration:none;color:inherit;">
+                        <div style="width:87px;height:87px;border-radius:50%;overflow:hidden;border:2px solid #4ecdc4;margin:0 auto 4px auto;">
+                          <img src="marc.png" alt="Marc" style="width:100%;height:100%;object-fit:cover;">
+                        </div>
+                        <div style="font-weight:bold;">Marc</div>
+                      </a>
+                    </div>
+                    <div style="text-align:center;">
+                      <a href="https://www.linkedin.com/in/paulswartzendruber/" target="_blank" rel="noopener noreferrer" style="text-decoration:none;color:inherit;">
+                        <div style="width:70px;height:70px;border-radius:50%;overflow:hidden;border:2px solid #4ecdc4;margin:0 auto 4px auto;">
+                          <img src="paul.png" alt="Paul" style="width:100%;height:100%;object-fit:cover;">
+                        </div>
+                        <div style="font-weight:bold;">Paul</div>
+                      </a>
+                    </div>
+                    <div style="text-align:center;">
+                      <div style="width:70px;height:70px;border-radius:50%;overflow:hidden;border:2px solid #facc15;margin:0 auto 4px auto;display:flex;align-items:center;justify-content:center;background:#1f2937;">
+                        <span style="font-size:2.1em;">💰</span>
+                      </div>
+                      <div style="font-weight:bold;">VC Coins</div>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </table>
+          </div>
+
+          <div class="fact-box" id="end-fact"></div>
+          <div class="round-message" id="round-message"></div>
+
+          <a class="go-elora-link" href="https://eloratherapeutics.com" target="_blank" rel="noopener noreferrer">
+            <span class="pill">Learn more</span>
+            <span>Elora Therapeutics — First-in-class enzyme therapy to remove microplastics from humans.</span>
+          </a>
+
+          <div style="margin-top:10px;">
+            <button class="btn" onclick="startGame()">Try Again</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="playfield-hud-bottom-wrapper">
+      <div id="playfield-corehud">
+        <div class="pf-core-row">
+          <span class="pf-core-item" id="hud-score">Score: 0</span>
+          <span class="pf-core-item" id="hud-level">Level: 1</span>
+          <span class="pf-core-item" id="hud-health">Cell Health: 100</span>
+          <span class="pf-core-item" id="hud-enzyme">Enzyme: Standard</span>
+          <span class="pf-core-item"><button id="hud-mute" onclick="toggleMute()">🔊</button></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="hud-below">
+    <div class="hud-message" id="hud-message"></div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const GAMEWIDTH = 800;
+    const GAMEHEIGHT = 600;
+    canvas.width = GAMEWIDTH;
+    canvas.height = GAMEHEIGHT;
+
+    let scaleX = 1;
+    let scaleY = 1;
+    let offsetLeft = 0;
+    let offsetTop = 0;
+
+    function resizeCanvas() {
+      const wrapper = document.getElementById("game-wrapper");
+      const w = wrapper.clientWidth;
+      const h = wrapper.clientHeight || (window.innerHeight * 0.7);
+      const scale = Math.min(w / GAMEWIDTH, h / GAMEHEIGHT);
+      const displayWidth = GAMEWIDTH * scale;
+      const displayHeight = GAMEHEIGHT * scale;
+      canvas.style.width = displayWidth + "px";
+      canvas.style.height = displayHeight + "px";
+      offsetLeft = (w - displayWidth) / 2;
+      offsetTop = (h - displayHeight) / 2;
+      canvas.style.left = offsetLeft + "px";
+      canvas.style.top = offsetTop + "px";
+      scaleX = GAMEWIDTH / displayWidth;
+      scaleY = GAMEHEIGHT / displayHeight;
+    }
+
+    window.addEventListener("resize", resizeCanvas);
+    window.addEventListener("orientationchange", resizeCanvas);
+    window.addEventListener("load", resizeCanvas);
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) resizeCanvas(); });
+
+    function getGameCoords(clientX, clientY) {
+      const rect = canvas.getBoundingClientRect();
+      const x = (clientX - rect.left) * scaleX;
+      const y = (clientY - rect.top) * scaleY;
+      return { x, y };
+    }
+
+    let gameRunning = false, score = 0, health = 100, level = 1;
+    let enzymeType = "standard", enzymePower = 1;
+    let enzymes = [], powerUps = [], effects = [], microplastics = [];
+    let spawnTimer = 0, powerUpTimer = 0, difficultyTimer = 0, cellPulse = 0;
+    let backgroundStars = [];
+
+    const killCounts = { PET: 0, PS: 0, PE: 0, PP: 0 };
+    let marcActivations = 0;
+    let paulActivations = 0;
+    let vcCoinCount = 0;
+
+    const marcImg = new Image();
+    marcImg.src = "marc.png";
+    const paulImg = new Image();
+    paulImg.src = "paul.png";
+
+    const marcVoice = new Audio("marc.mp3");
+    const paulVoice = new Audio("paul.mp3");
+    let currentCoFounder = null;
+
+    const vcAudio = new Audio("coins.mp3");
+    vcAudio.preload = "auto";
+    const fightAudio = new Audio("fight.mp3");
+    fightAudio.loop = true;
+    let fightMusicPlaying = false;
+    let firstCofounderTriggered = false;
+
+    const MPTYPES = [
+      { name: "Polypropylene", short: "PP", color: "#ff4757", size: 20, speed: 0.8, hp: 1, points: 15, shape: "jagged" },
+      { name: "Polyethylene", short: "PE", color: "#ffa502", size: 22, speed: 0.7, hp: 2, points: 20, shape: "foam" },
+      { name: "Polystyrene", short: "PS", color: "#7bed9f", size: 18, speed: 0.95, hp: 2, points: 25, shape: "circle" },
+      { name: "Polyethylene terephthalate", short: "PET", color: "#a29bfe", size: 24, speed: 0.6, hp: 3, points: 30, shape: "block" }
+    ];
+
+    const ROUNDMESSAGES = [
+      "Microplastics don’t just pollute oceans — they lodge in blood and tissues, quietly rewiring human health from the inside out.",
+      "Tiny plastic fragments slip past our natural defenses, accumulating where biology has no built-in way to break them down or clear them.",
+      "PET microplastics behave like a stealth toxin, linked to chronic inflammation, metabolic dysfunction, and hormone disruption in humans.",
+      "Every sip and breath can add more microplastic to a lifelong burden our bodies were never evolved to handle.",
+      "Once microplastics cross into organs and circulation, they turn from environmental trash into a persistent, internal exposure risk.",
+      "Plastic particles can infiltrate cells and immune pathways, stoking oxidative stress and inflammatory signals that won’t easily switch off.",
+      "Because we lack enzymes to digest synthetic polymers, microplastics can linger for years, acting as slow, silent drivers of disease.",
+      "The same PET used in bottles and packaging is now turning up in human blood, raising hard questions about long-term health effects.",
+      "Microplastics carry thousands of plastic-linked chemicals, creating a complex cocktail of potential endocrine and metabolic disruptors in the body.",
+      "Without a way to actively remove them, microplastics risk becoming a permanent feature of human biology rather than a temporary contaminant."
+    ];
+
+    const POWERUPTYPES = [
+      { name: "FAST-PETase", color: "#00e5ff", emoji: "⚡", effect: "rapid", duration: 6000 },
+      { name: "Enzyme Boost", color: "#ffd32a", emoji: "💪", effect: "power", duration: 6000 },
+      { name: "Cell Repair", color: "#ff4757", emoji: "❤️", effect: "heal", duration: 0 },
+      { name: "Chain Reaction", color: "#a29bfe", emoji: "💥", effect: "blast", duration: 4000 },
+      { name: "VC Coins", color: "#facc15", emoji: "💰", effect: "vc-slow", duration: 5000 }
+    ];
+
+    const MARCPOWERUP = { name: "Marc Powerup", effect: "marc", color: "#38bdf8", emoji: "M", duration: 6000 };
+    const PAULPOWERUP = { name: "Paul Powerup", effect: "paul", color: "#22c55e", emoji: "P", duration: 6000 };
+
+    for (let i = 0; i < 80; i++) {
+      backgroundStars.push({
+        x: Math.random() * GAMEWIDTH,
+        y: Math.random() * GAMEHEIGHT,
+        size: Math.random() * 2,
+        alpha: Math.random() * 0.5 + 0.1,
+        speed: Math.random() * 0.3 + 0.1
+      });
+    }
+
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+    let muted = false;
+    let audioInitialized = false;
+
+    let sfxGainNode = null;
+    let vcDuckTimeoutId = null;
+    let vcSpeedActive = false;
+
+    function initAudio() {
+      if (audioInitialized) return;
+      audioInitialized = true;
+      try {
+        if (!audioCtx) audioCtx = new AudioCtx();
+        if (audioCtx.state === "suspended") audioCtx.resume();
+
+        sfxGainNode = audioCtx.createGain();
+        sfxGainNode.gain.value = 1.0;
+        sfxGainNode.connect(audioCtx.destination);
+
+        marcVoice.muted = true; paulVoice.muted = true;
+        marcVoice.play().then(() => marcVoice.pause()).catch(() => {});
+        paulVoice.play().then(() => paulVoice.pause()).catch(() => {});
+        marcVoice.muted = false; paulVoice.muted = false;
+      } catch (e) {}
+    }
+
+    function toggleMute() {
+      muted = !muted;
+      document.getElementById("hud-mute").textContent = muted ? "🔇" : "🔊";
+      if (audioCtx) {
+        if (muted) audioCtx.suspend();
+        else audioCtx.resume();
+      }
+      marcVoice.muted = muted;
+      paulVoice.muted = muted;
+      fightAudio.muted = muted;
+      vcAudio.muted = muted;
+    }
+
+    function duckMainAudioForCoins() {
+      if (!sfxGainNode) return;
+      if (vcDuckTimeoutId !== null) {
+        clearTimeout(vcDuckTimeoutId);
+        vcDuckTimeoutId = null;
+      }
+      sfxGainNode.gain.value = 0.5;
+      vcDuckTimeoutId = setTimeout(() => {
+        sfxGainNode.gain.value = 1.0;
+        vcDuckTimeoutId = null;
+      }, 5000);
+    }
+
+    function playVCSound() {
+      try {
+        vcAudio.currentTime = 0;
+        vcAudio.play().catch(() => {});
+        duckMainAudioForCoins();
+      } catch (e) {}
+    }
+
+    function playFightMusic() {
+      if (!audioCtx) initAudio();
+      if (muted) return;
+      fightAudio.currentTime = 0;
+      fightAudio.play().catch(() => {});
+      fightMusicPlaying = true;
+    }
+
+    function stopFightMusic() {
+      fightAudio.pause();
+      fightAudio.currentTime = 0;
+      fightMusicPlaying = false;
+    }
+
+    function playSound(type) {
+      if (!audioCtx || muted || !sfxGainNode) return;
+      const now = audioCtx.currentTime;
+
+      const baseShoot = () => {
+        const o = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        o.connect(g); g.connect(sfxGainNode);
+        o.type = "sine";
+        o.frequency.setValueAtTime(880, now);
+        o.frequency.exponentialRampToValueAtTime(1760, now + 0.05);
+        o.frequency.exponentialRampToValueAtTime(440, now + 0.1);
+        g.gain.setValueAtTime(0.15, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+        o.start(now); o.stop(now + 0.15);
+      };
+
+      if (type === "shoot") baseShoot();
+      else if (type === "shoot-marc") {
+        const o = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        o.connect(g); g.connect(sfxGainNode);
+        o.type = "square";
+        o.frequency.setValueAtTime(1200, now);
+        o.frequency.exponentialRampToValueAtTime(2400, now + 0.06);
+        g.gain.setValueAtTime(0.18, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+        o.start(now); o.stop(now + 0.18);
+      } else if (type === "shoot-paul") {
+        const o = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        o.connect(g); g.connect(sfxGainNode);
+        o.type = "triangle";
+        o.frequency.setValueAtTime(600, now);
+        o.frequency.exponentialRampToValueAtTime(1600, now + 0.08);
+        g.gain.setValueAtTime(0.2, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+        o.start(now); o.stop(now + 0.22);
+      } else if (type === "hit") {
+        const o = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        o.connect(g); g.connect(sfxGainNode);
+        o.type = "square";
+        o.frequency.setValueAtTime(300, now);
+        o.frequency.exponentialRampToValueAtTime(80, now + 0.1);
+        g.gain.setValueAtTime(0.12, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+        o.start(now); o.stop(now + 0.12);
+      } else if (type === "destroy") {
+        const o1 = audioCtx.createOscillator();
+        const o2 = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        o1.connect(g); o2.connect(g); g.connect(sfxGainNode);
+
+        o1.type = "sine";
+        o1.frequency.setValueAtTime(600, now);
+        o1.frequency.exponentialRampToValueAtTime(1200, now + 0.08);
+        o1.frequency.exponentialRampToValueAtTime(200, now + 0.25);
+
+        o2.type = "triangle";
+        o2.frequency.setValueAtTime(800, now);
+        o2.frequency.exponentialRampToValueAtTime(100, now + 0.3);
+
+        g.gain.setValueAtTime(0.15, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+
+        o1.start(now); o2.start(now);
+        o1.stop(now + 0.3); o2.stop(now + 0.3);
+      } else if (type === "powerup") {
+        [523, 659, 784, 1047].forEach((freq, i) => {
+          const o = audioCtx.createOscillator();
+          const g = audioCtx.createGain();
+          o.connect(g); g.connect(sfxGainNode);
+          o.type = "sine";
+          o.frequency.setValueAtTime(freq, now + i * 0.08);
+          g.gain.setValueAtTime(0, now + i * 0.08);
+          g.gain.linearRampToValueAtTime(0.12, now + i * 0.08 + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.08 + 0.2);
+          o.start(now + i * 0.08);
+          o.stop(now + i * 0.08 + 0.2);
+        });
+      } else if (type === "damage") {
+        const o = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        const dist = audioCtx.createWaveShaper();
+        const curve = new Float32Array(256);
+        for (let i = 0; i < 256; i++) {
+          const x = (i * 2) / 256 - 1;
+          curve[i] = (Math.PI + 100) * x / (Math.PI + 100 * Math.abs(x));
+        }
+        dist.curve = curve;
+        o.connect(dist); dist.connect(g); g.connect(sfxGainNode);
+        o.type = "sawtooth";
+        o.frequency.setValueAtTime(150, now);
+        o.frequency.exponentialRampToValueAtTime(40, now + 0.3);
+        g.gain.setValueAtTime(0.2, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+        o.start(now); o.stop(now + 0.35);
+      } else if (type === "levelup") {
+        [523, 659, 784, 1047, 784, 1047].forEach((freq, i) => {
+          const o = audioCtx.createOscillator();
+          const g = audioCtx.createGain();
+          o.connect(g); g.connect(sfxGainNode);
+          o.type = "triangle";
+          o.frequency.setValueAtTime(freq, now + i * 0.1);
+          g.gain.setValueAtTime(0, now + i * 0.1);
+          g.gain.linearRampToValueAtTime(0.12, now + i * 0.1 + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.1 + 0.15);
+          o.start(now + i * 0.1);
+          o.stop(now + i * 0.1 + 0.15);
+        });
+      } else if (type === "gameover") {
+        [440, 370, 311, 261, 220, 185].forEach((freq, i) => {
+          const o = audioCtx.createOscillator();
+          const g = audioCtx.createGain();
+          o.connect(g); g.connect(sfxGainNode);
+          o.type = "sawtooth";
+          o.frequency.setValueAtTime(freq, now + i * 0.15);
+          g.gain.setValueAtTime(0, now + i * 0.15);
+          g.gain.linearRampToValueAtTime(0.1, now + i * 0.15 + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.15 + 0.2);
+          o.start(now + i * 0.15);
+          o.stop(now + i * 0.15 + 0.2);
+        });
+      }
+    }
+
+    function clearCofounderPower() {
+      enzymeType = "standard";
+      enzymePower = 1;
+      document.getElementById("hud-enzyme").textContent = "Enzyme: Standard";
+      showPowerupBanner(false);
+      showVcBanner(false);
+      stopAllPowerupVoices();
+      currentCoFounder = null;
+    }
+
+    function stopAllPowerupVoices() {
+      marcVoice.pause();
+      paulVoice.pause();
+      marcVoice.currentTime = 0;
+      paulVoice.currentTime = 0;
+    }
+
+    marcVoice.addEventListener("ended", () => {
+      if (currentCoFounder === "marc") clearCofounderPower();
+    });
+    paulVoice.addEventListener("ended", () => {
+      if (currentCoFounder === "paul") clearCofounderPower();
+    });
+
+    canvas.addEventListener("click", initAudio, { once: true });
+    canvas.addEventListener("touchstart", initAudio, { once: true });
+
+    const eloraLogoImg = new Image();
+    eloraLogoImg.src = "Elora-Therapeutics-LogoStackedBlue.jpg";
+
+    function drawBackground() {
+      const grad = ctx.createRadialGradient(GAMEWIDTH / 2, GAMEHEIGHT / 2, 50, GAMEWIDTH / 2, GAMEHEIGHT / 2, GAMEWIDTH / 2);
+      grad.addColorStop(0, "#1a1a4e");
+      grad.addColorStop(0.5, "#0f0f3a");
+      grad.addColorStop(1, "#050520");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, GAMEWIDTH, GAMEHEIGHT);
+
+      backgroundStars.forEach(s => {
+        s.y += s.speed;
+        if (s.y > GAMEHEIGHT) { s.y = 0; s.x = Math.random() * GAMEWIDTH; }
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(100, 100, 200, ${s.alpha})`;
+        ctx.fill();
+      });
+    }
+
+    function drawCell() {
+      const cx = GAMEWIDTH / 2;
+      const cy = GAMEHEIGHT - 80;
+      cellPulse += 0.03;
+      const pulse = Math.sin(cellPulse) * 3;
+
+      ctx.save();
+
+      const rX = 80 + pulse * 1.2;
+      const rY = 65 + pulse;
+
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, rX, rY, 0.1, 0, Math.PI * 2);
+      const memGrad = ctx.createLinearGradient(cx - rX, cy - rY, cx + rX, cy + rY);
+      memGrad.addColorStop(0, "rgba(125, 211, 252, 0.4)");
+      memGrad.addColorStop(1, "rgba(37, 99, 235, 0.95)");
+      ctx.fillStyle = memGrad;
+      ctx.fill();
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = "rgba(15, 23, 42, 0.9)";
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, rX - 10, rY - 10, 0.1, 0, Math.PI * 2);
+      const cytGrad = ctx.createRadialGradient(cx, cy, 10, cx, cy, rY);
+      cytGrad.addColorStop(0, "rgba(241, 245, 249, 0.95)");
+      cytGrad.addColorStop(1, "rgba(59, 130, 246, 0.15)");
+      ctx.fillStyle = cytGrad;
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(cx - 20, cy - 8, 20, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(191, 219, 254, 0.95)";
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "rgba(30, 64, 175, 0.9)";
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(cx - 16, cy - 10, 9, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(30, 64, 175, 0.98)";
+      ctx.fill();
+
+      const badgeW = 90;
+      const badgeH = 34;
+      const bx = cx - badgeW / 2;
+      const by = cy + 4;
+
+      ctx.save();
+      ctx.shadowColor = "rgba(37, 99, 235, 0.9)";
+      ctx.shadowBlur = 14;
+      ctx.globalAlpha = 1.0;
+      ctx.fillStyle = "rgba(15, 23, 42, 0.96)";
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(bx, by, badgeW, badgeH, 10);
+      else ctx.rect(bx, by, badgeW, badgeH);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = "rgba(191, 219, 254, 0.95)";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      if (eloraLogoImg.complete && eloraLogoImg.naturalWidth > 0) {
+        const pad = 5;
+        const lw = badgeW - pad * 2;
+        const lh = badgeH - pad * 2;
+        ctx.drawImage(eloraLogoImg, bx + pad, by + pad, lw, lh);
+      } else {
+        ctx.fillStyle = "#eff6ff";
+        ctx.font = "bold 14px Segoe UI, sans-serif";
+        ctx.textBaseline = "middle";
+        ctx.textAlign = "center";
+        ctx.fillText("ELORA", cx, by + badgeH / 2 - 4);
+        ctx.font = "8px Segoe UI, sans-serif";
+        ctx.fillText("THERAPEUTICS", cx, by + badgeH / 2 + 7);
+      }
+      ctx.restore();
+
+      const ringR = Math.max(rX, rY) + 10;
+      const ha = (health / 100) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.arc(cx, cy, ringR, -Math.PI / 2, -Math.PI / 2 + ha);
+      ctx.strokeStyle = health > 50 ? "#4ecdc4" : (health > 25 ? "#ffa502" : "#ff4757");
+      ctx.lineWidth = 4;
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    function drawMicroplastic(mp) {
+      ctx.save();
+      ctx.translate(mp.x, mp.y);
+      ctx.rotate(mp.rotation);
+
+      const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, mp.size * 1.5);
+      glow.addColorStop(0, mp.color + "80");
+      glow.addColorStop(1, "transparent");
+      ctx.fillStyle = glow;
+      ctx.fillRect(-mp.size * 2, -mp.size * 2, mp.size * 4, mp.size * 4);
+
+      ctx.fillStyle = mp.color;
+      ctx.strokeStyle = mp.color;
+      ctx.lineWidth = 2;
+
+      if (mp.shape === "jagged") {
+        ctx.beginPath();
+        for (let i = 0; i < 7; i++) {
+          const a = (i / 7) * Math.PI * 2;
+          const r = mp.size * (0.6 + Math.random() * 0.4);
+          ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+        }
+        ctx.closePath();
+        ctx.fill();
+      } else if (mp.shape === "foam") {
+        for (let i = 0; i < 5; i++) {
+          ctx.beginPath();
+          ctx.arc((Math.random() - 0.5) * mp.size, (Math.random() - 0.5) * mp.size, mp.size * 0.4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      } else if (mp.shape === "circle") {
+        ctx.beginPath();
+        ctx.arc(0, 0, mp.size / 2, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (mp.shape === "block") {
+        ctx.fillRect(-mp.size / 2, -mp.size / 2, mp.size, mp.size);
+      }
+
+      ctx.fillStyle = "white";
+      ctx.font = "10px monospace";
+      ctx.textAlign = "center";
+      ctx.fillText(mp.short, 0, mp.size + 10);
+
+      ctx.restore();
+    }
+
+    function drawEnzyme(e) {
+      ctx.save();
+      ctx.translate(e.x, e.y);
+
+      if (e.style === "marc") {
+        ctx.beginPath();
+        ctx.arc(0, 0, e.size + 6, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(34, 211, 238, 0.6)";
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(0, 0, e.size, 0, Math.PI * 2);
+        ctx.fillStyle = e.color;
+        ctx.fill();
+      } else if (e.style === "paul") {
+        const grad = ctx.createLinearGradient(-e.size * 2, 0, e.size, 0);
+        grad.addColorStop(0, "rgba(16, 185, 129, 0)");
+        grad.addColorStop(1, e.color);
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, e.size * 2.2, e.size * 0.7, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(0, 0, e.size * 0.7, 0, Math.PI * 2);
+        ctx.fillStyle = "#ecfdf5";
+        ctx.fill();
+      } else {
+        ctx.beginPath();
+        ctx.arc(0, 0, e.size + 4, 0, Math.PI * 2);
+        ctx.fillStyle = e.color + "30";
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(0, 0, e.size, 0, Math.PI * 2);
+        ctx.fillStyle = e.color;
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(0, 0, e.size * 0.5, 0, Math.PI * 2);
+        ctx.fillStyle = "white";
+        ctx.fill();
+      }
+
+      ctx.restore();
+    }
+
+    function drawPowerUp(p) {
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      p.bobPhase += 0.05;
+      const bob = Math.sin(p.bobPhase) * 5;
+
+      if (p.type === "marc" && marcImg.complete) {
+        const s = 160;
+        ctx.save();
+        ctx.shadowColor = "rgba(34, 211, 238, 0.9)";
+        ctx.shadowBlur = 20;
+        ctx.drawImage(marcImg, -s / 2, bob - s / 2, s, s);
+        ctx.restore();
+      } else if (p.type === "paul" && paulImg.complete) {
+        const s = 128;
+        ctx.save();
+        ctx.shadowColor = "rgba(34, 197, 94, 0.9)";
+        ctx.shadowBlur = 20;
+        ctx.drawImage(paulImg, -s / 2, bob - s / 2, s, s);
+        ctx.restore();
+      } else {
+        const radius = p.effect === "vc-slow" ? 22 : 18;
+        ctx.beginPath();
+        ctx.arc(0, bob, radius, 0, Math.PI * 2);
+        ctx.fillStyle = p.color + "20";
+        ctx.fill();
+        ctx.strokeStyle = p.color;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.font = "20px serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillStyle = p.color;
+        ctx.fillText(p.emoji, 0, bob);
+      }
+
+      ctx.font = "9px monospace";
+      ctx.fillStyle = "#cbd5f5";
+      ctx.textAlign = "center";
+      ctx.fillText(p.name, 0, bob + 40);
+
+      ctx.restore();
+    }
+
+    function drawEffect(e) {
+      ctx.save();
+      ctx.translate(e.x, e.y);
+      ctx.globalAlpha = e.alpha;
+
+      if (e.type === "explosion") {
+        ctx.beginPath();
+        ctx.arc(0, 0, e.radius, 0, Math.PI * 2);
+        ctx.strokeStyle = e.color;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      } else if (e.type === "text") {
+        ctx.font = "bold 14px monospace";
+        ctx.fillStyle = e.color;
+        ctx.textAlign = "center";
+        ctx.fillText(e.text, 0, 0);
+      } else if (e.type === "sparkle") {
+        for (let i = 0; i < 14; i++) {
+          const a = (i / 14) * Math.PI * 2;
+          const d = e.radius * 0.7;
+          ctx.beginPath();
+          ctx.arc(Math.cos(a) * d, Math.sin(a) * d, 2.2, 0, Math.PI * 2);
+          ctx.fillStyle = e.color;
+          ctx.fill();
+        }
+      }
+
+      ctx.restore();
+    }
+
+    function spawnMicroplastic() {
+      const r = Math.random();
+      let type;
+      if (r < 0.4) type = MPTYPES[3];
+      else if (r < 0.6) type = MPTYPES[2];
+      else if (r < 0.75) type = MPTYPES[1];
+      else type = MPTYPES[0];
+
+      const side = Math.floor(Math.random() * 3);
+      let x, y;
+      const targetX = GAMEWIDTH / 2 + (Math.random() - 0.5) * 100;
+      const targetY = GAMEHEIGHT - 80;
+
+      if (side === 0) { x = Math.random() * GAMEWIDTH; y = -20; }
+      else if (side === 1) { x = -20; y = Math.random() * GAMEHEIGHT * 0.5; }
+      else { x = GAMEWIDTH + 20; y = Math.random() * GAMEHEIGHT * 0.5; }
+
+      const angle = Math.atan2(targetY - y, targetX - x);
+      const speed = type.speed + level * 0.1 + (Math.random() * 0.3 - 0.15);
+
+      microplastics.push({
+        x, y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        size: type.size,
+        hp: type.hp + Math.floor(level / 4),
+        maxHp: type.hp + Math.floor(level / 4),
+        color: type.color,
+        shape: type.shape,
+        name: type.name,
+        short: type.short,
+        points: type.points,
+        rotation: Math.random() * Math.PI * 2,
+        rotSpeed: (Math.random() - 0.5) * 0.05
+      });
+    }
+
+    function spawnPowerUp() {
+      const roll = Math.random();
+      let p;
+
+      if (roll < 0.1) {
+        p = { x: Math.random() * (GAMEWIDTH - 160) + 80, y: -60, vy: 0.9, bobPhase: Math.random() * Math.PI * 2, name: "Marc x10", type: "marc", ...MARCPOWERUP };
+      } else if (roll < 0.2) {
+        p = { x: Math.random() * (GAMEWIDTH - 160) + 80, y: -60, vy: 0.9, bobPhase: Math.random() * Math.PI * 2, name: "Paul x10", type: "paul", ...PAULPOWERUP };
+      } else if (roll < 0.9) {
+        const type = POWERUPTYPES[4];
+        p = {
+          x: Math.random() * (GAMEWIDTH - 160) + 80,
+          y: -60,
+          vy: 0.9,
+          bobPhase: Math.random() * Math.PI * 2,
+          name: type.name,
+          type: "vc",
+          ...type
+        };
+      } else {
+        const type = POWERUPTYPES[Math.floor(Math.random() * 4)];
+        p = {
+          x: Math.random() * (GAMEWIDTH - 120) + 60,
+          y: -40,
+          vy: 0.9,
+          bobPhase: Math.random() * Math.PI * 2,
+          name: type.name,
+          type: "standard",
+          ...type
+        };
+      }
+
+      powerUps.push(p);
+    }
+
+    function fireEnzyme(targetX, targetY) {
+      const startX = GAMEWIDTH / 2;
+      const startY = GAMEHEIGHT - 80;
+      const angle = Math.atan2(targetY - startY, targetX - startX);
+      const baseSpeed = 9;
+      const speed = vcSpeedActive ? baseSpeed * 0.5 : baseSpeed;
+
+      if (enzymeType === "marc") {
+        playSound("shoot-marc");
+        const streams = 7;
+        const spread = 0.4;
+        for (let i = 0; i < streams; i++) {
+          const t = i / (streams - 1);
+          const a = angle - spread / 2 + spread * t;
+          enzymes.push({
+            x: startX, y: startY,
+            vx: Math.cos(a) * speed * 1.3,
+            vy: Math.sin(a) * speed * 1.3,
+            size: 7, color: "#22d3ee",
+            damage: enzymePower * 10,
+            style: "marc"
+          });
+        }
+        return;
+      }
+
+      if (enzymeType === "paul") {
+        playSound("shoot-paul");
+        const streams = 5;
+        const spread = 0.6;
+        for (let i = 0; i < streams; i++) {
+          const t = i / (streams - 1);
+          const a = angle - spread / 2 + spread * t;
+          enzymes.push({
+            x: startX, y: startY,
+            vx: Math.cos(a) * speed * 1.15,
+            vy: Math.sin(a) * speed * 1.15,
+            size: 8, color: "#22c55e",
+            damage: enzymePower * 10,
+            style: "paul"
+          });
+        }
+        return;
+      }
+
+      let color = "#00e5ff";
+      let size = 6;
+      let damage = enzymePower * 0.5;
+
+      if (enzymeType === "rapid") {
+        playSound("shoot");
+        for (let i = -1; i <= 1; i++) {
+          const a = angle + i * 0.15;
+          enzymes.push({
+            x: startX, y: startY,
+            vx: Math.cos(a) * speed * 1.3,
+            vy: Math.sin(a) * speed * 1.3,
+            size: 5, color: "#00e5ff",
+            damage: enzymePower * 0.6
+          });
+        }
+        return;
+      }
+
+      if (enzymeType === "power") {
+        playSound("shoot");
+        color = "#ffd32a"; size = 9; damage = enzymePower * 2;
+      } else if (enzymeType === "blast") {
+        playSound("shoot");
+        color = "#a29bfe"; size = 11; damage = enzymePower * 3;
+      } else {
+        playSound("shoot");
+      }
+
+      enzymes.push({
+        x: startX, y: startY,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        size, color, damage
+      });
+    }
+
+    function updateKillBoard() {
+      document.getElementById("pf-kill-PET").textContent = killCounts.PET;
+      document.getElementById("pf-kill-PS").textContent = killCounts.PS;
+      document.getElementById("pf-kill-PE").textContent = killCounts.PE;
+      document.getElementById("pf-kill-PP").textContent = killCounts.PP;
+      document.getElementById("pf-marc-activations").textContent = marcActivations;
+      document.getElementById("pf-paul-activations").textContent = paulActivations;
+      document.getElementById("pf-vc-activations").textContent = vcCoinCount;
+    }
+
+    function isCofounderPowerActive() {
+      return enzymeType === "marc" || enzymeType === "paul";
+    }
+
+    function checkCollisions() {
+      const cellX = GAMEWIDTH / 2;
+      const cellY = GAMEHEIGHT - 80;
+
+      for (let i = enzymes.length - 1; i >= 0; i--) {
+        let enzymeHitHandled = false;
+
+        for (let j = microplastics.length - 1; j >= 0; j--) {
+          const e = enzymes[i];
+          const m = microplastics[j];
+          if (!e || !m) continue;
+
+          if (Math.hypot(e.x - m.x, e.y - m.y) < m.size + e.size) {
+            m.hp -= e.damage;
+            enzymes.splice(i, 1);
+            enzymeHitHandled = true;
+
+            effects.push({ x: m.x, y: m.y, type: "sparkle", color: e.color, alpha: 1, radius: 22 });
+
+            if (m.hp <= 0) {
+              playSound("destroy");
+              score += m.points * level;
+
+              if (m.short && killCounts[m.short] !== undefined) {
+                killCounts[m.short]++;
+                updateKillBoard();
+              }
+
+              effects.push({ x: m.x, y: m.y, type: "explosion", color: m.color, alpha: 1, radius: 5 });
+              effects.push({ x: m.x, y: m.y - 20, type: "text", color: "#4ecdc4", text: `+${m.points * level}`, alpha: 1, radius: 0 });
+              microplastics.splice(j, 1);
+            } else {
+              playSound("hit");
+            }
+            break;
+          }
+        }
+
+        if (!enzymeHitHandled) {
+          for (let k = powerUps.length - 1; k >= 0; k--) {
+            const e = enzymes[i];
+            const p = powerUps[k];
+            if (!e || !p) continue;
+
+            const radius = (p.type === "marc" || p.type === "paul" || p.type === "vc") ? 64 : 18;
+            const dist = Math.hypot(e.x - p.x, e.y - p.y);
+
+            if (dist < radius + e.size) {
+              activatePowerUp(p);
+              powerUps.splice(k, 1);
+              effects.push({ x: p.x, y: p.y, type: "sparkle", color: p.color, alpha: 1, radius: 32 });
+              enzymes.splice(i, 1);
+              enzymeHitHandled = true;
+              break;
+            }
+          }
+        }
+      }
+
+      for (let i = microplastics.length - 1; i >= 0; i--) {
+        const m = microplastics[i];
+        if (Math.hypot(m.x - cellX, m.y - cellY) < 40 + m.size) {
+          health -= (5 + level * 0.7);
+          playSound("damage");
+          effects.push({ x: m.x, y: m.y, type: "explosion", color: "#ff4757", alpha: 1, radius: 5 });
+          microplastics.splice(i, 1);
+          if (health <= 0) { health = 0; gameOver(); }
+        }
+      }
+
+      for (let i = powerUps.length - 1; i >= 0; i--) {
+        const p = powerUps[i];
+        const radius = (p.type === "marc" || p.type === "paul" || p.type === "vc") ? 64 : 18;
+        if (Math.hypot(p.x - cellX, p.y - cellY) < 40 + radius) {
+          activatePowerUp(p);
+          powerUps.splice(i, 1);
+        }
+      }
+    }
+
+    function showPowerupBanner(show) {
+      document.getElementById("powerup-banner").style.display = show ? "block" : "none";
+    }
+
+    function showVcBanner(show) {
+      document.getElementById("vc-banner").style.display = show ? "block" : "none";
+    }
+
+    function addEloraBurst() {
+      const cx = GAMEWIDTH / 2;
+      const cy = GAMEHEIGHT / 2;
+
+      effects.push({ x: cx, y: cy, type: "explosion", color: "#22d3ee", alpha: 1, radius: 0 });
+      for (let i = 0; i < 24; i++) {
+        effects.push({
+          x: cx, y: cy,
+          type: "sparkle",
+          color: (i % 2 === 0) ? "#22d3ee" : "#a855f7",
+          alpha: 1,
+          radius: 30 + Math.random() * 20
+        });
+      }
+      effects.push({ x: cx, y: cy - 40, type: "text", color: "#e0f2fe", text: "x10 Enzyme Firepower", alpha: 1.2, radius: 0 });
+    }
+
+    function flashAndShakeVC() {
+      const flash = document.getElementById("vc-flash");
+      const hudTop = document.getElementById("playfield-hud-top");
+      flash.style.opacity = "1";
+      hudTop.classList.add("shake-vc");
+      setTimeout(() => {
+        flash.style.opacity = "0";
+        hudTop.classList.remove("shake-vc");
+      }, 250);
+    }
+
+    function activatePowerUp(p) {
+      if (p.effect === "vc-slow") {
+        vcCoinCount += 1;
+        updateKillBoard();
+      }
+
+      if (isCofounderPowerActive() && !(p.effect === "marc" || p.effect === "paul")) {
+        effects.push({
+          x: p.x,
+          y: p.y - 10,
+          type: "text",
+          color: "#cbd5f5",
+          text: "Blocked (Co-founder active)",
+          alpha: 1,
+          radius: 0
+        });
+        if (p.effect === "vc-slow") {
+          playVCSound();
+          flashAndShakeVC();
+          showVcBanner(true);
+          setTimeout(() => showVcBanner(false), p.duration);
+        }
+        return;
+      }
+
+      if (p.effect === "vc-slow") {
+        vcSpeedActive = true;
+        document.getElementById("hud-enzyme").textContent = "Enzyme: VC Coins x0.5 speed";
+
+        playVCSound();
+        flashAndShakeVC();
+        showVcBanner(true);
+        effects.push({ x: p.x, y: p.y, type: "text", color: p.color, text: `${p.name}!`, alpha: 1, radius: 0 });
+
+        const duration = p.duration;
+        const startTime = Date.now();
+
+        const interval = setInterval(() => {
+          if (Date.now() - startTime >= duration) {
+            clearInterval(interval);
+            vcSpeedActive = false;
+            showVcBanner(false);
+            if (!isCofounderPowerActive()) {
+              document.getElementById("hud-enzyme").textContent = "Enzyme: Standard";
+            }
+          }
+        }, 50);
+        return;
+      }
+
+      playSound("powerup");
+      effects.push({ x: p.x, y: p.y, type: "text", color: p.color, text: `${p.name}!`, alpha: 1, radius: 0 });
+
+      if (p.effect === "heal") {
+        health = Math.min(100, health + 35);
+        return;
+      }
+
+      if (p.effect === "marc" || p.effect === "paul") {
+        if (!firstCofounderTriggered) {
+          stopFightMusic();
+          firstCofounderTriggered = true;
+        }
+
+        enzymeType = p.effect;
+        enzymePower = 10;
+        if (p.effect === "marc") marcActivations++;
+        else paulActivations++;
+        updateKillBoard();
+        document.getElementById("hud-enzyme").textContent =
+          `Enzyme: ${p.effect === "marc" ? "Marc x10" : "Paul x10"}`;
+
+        showPowerupBanner(true);
+        addEloraBurst();
+
+        if (p.effect === "marc") playMarcVoiceLoop();
+        else playPaulVoiceLoop();
+
+        return;
+      }
+
+      enzymeType = p.effect;
+      enzymePower = 1;
+      document.getElementById("hud-enzyme").textContent = `Enzyme: ${p.name}`;
+
+      setTimeout(() => {
+        if (!isCofounderPowerActive() && !vcSpeedActive) {
+          enzymeType = "standard";
+          enzymePower = 1;
+          document.getElementById("hud-enzyme").textContent = "Enzyme: Standard";
+          showPowerupBanner(false);
+        }
+      }, p.duration);
+    }
+
+    function playMarcVoiceLoop() {
+      if (currentCoFounder === "marc") return;
+      stopAllPowerupVoices();
+      currentCoFounder = "marc";
+      marcVoice.loop = false;
+      marcVoice.currentTime = 0;
+      marcVoice.play();
+    }
+
+    function playPaulVoiceLoop() {
+      if (currentCoFounder === "paul") return;
+      stopAllPowerupVoices();
+      currentCoFounder = "paul";
+      paulVoice.loop = false;
+      paulVoice.currentTime = 0;
+      paulVoice.play();
+    }
+
+    function updateGame() {
+      if (!gameRunning) return;
+
+      const speedFactor = vcSpeedActive ? 0.5 : 1;
+
+      spawnTimer += speedFactor;
+      if (spawnTimer > Math.max(35, 80 - level * 4)) {
+        spawnMicroplastic();
+        spawnTimer = 0;
+      }
+
+      powerUpTimer += speedFactor;
+      if (powerUpTimer > 140) {
+        spawnPowerUp();
+        powerUpTimer = 0;
+      }
+
+      difficultyTimer += speedFactor;
+      if (difficultyTimer > 720) {
+        level++;
+        difficultyTimer = 0;
+        playSound("levelup");
+        effects.push({ x: GAMEWIDTH / 2, y: GAMEHEIGHT / 2, type: "text", color: "#ffd32a", text: `LEVEL ${level}`, alpha: 1, radius: 0 });
+      }
+
+      microplastics.forEach(m => { m.x += m.vx * speedFactor; m.y += m.vy * speedFactor; m.rotation += m.rotSpeed * speedFactor; });
+      enzymes.forEach(e => { e.x += e.vx * speedFactor; e.y += e.vy * speedFactor; });
+      powerUps.forEach(p => { p.y += p.vy * speedFactor; });
+      effects.forEach(e => {
+        e.alpha -= 0.02 * speedFactor;
+        e.radius *= 1.2;
+        if (e.type === "text") e.y -= 1 * speedFactor;
+      });
+
+      enzymes = enzymes.filter(e => e.x > -20 && e.x < GAMEWIDTH + 20 && e.y > -20 && e.y < GAMEHEIGHT + 20);
+      microplastics = microplastics.filter(m => m.y < GAMEHEIGHT + 50);
+      powerUps = powerUps.filter(p => p.y < GAMEHEIGHT + 80);
+      effects = effects.filter(e => e.alpha > 0);
+
+      checkCollisions();
+
+      const healthPercent = Math.max(0, Math.round(health));
+      document.getElementById("hud-score").textContent = `Score: ${score}`;
+      document.getElementById("hud-level").textContent = `Level: ${level}`;
+      document.getElementById("hud-health").textContent = `Cell Health: ${healthPercent}`;
+    }
+
+    function render() {
+      drawBackground();
+      drawCell();
+      microplastics.forEach(drawMicroplastic);
+      enzymes.forEach(drawEnzyme);
+      powerUps.forEach(drawPowerUp);
+      effects.forEach(drawEffect);
+    }
+
+    function gameLoop() {
+      updateGame();
+      render();
+      if (gameRunning) requestAnimationFrame(gameLoop);
+    }
+
+    canvas.addEventListener("click", (e) => {
+      if (!gameRunning) return;
+      const p = getGameCoords(e.clientX, e.clientY);
+      fireEnzyme(p.x, p.y);
+    });
+
+    canvas.addEventListener("touchstart", (e) => {
+      if (!gameRunning) return;
+      const t = e.touches[0];
+      const p = getGameCoords(t.clientX, t.clientY);
+      fireEnzyme(p.x, p.y);
+    }, { passive: true });
+
+    function getLeaderboard() {
+      try {
+        const raw = localStorage.getItem("microplasticblasterleaderboard");
+        return raw ? JSON.parse(raw) : [];
+      } catch (e) { return []; }
+    }
+
+    function saveLeaderboard(lb) {
+      try { localStorage.setItem("microplasticblasterleaderboard", JSON.stringify(lb)); } catch (e) {}
+    }
+
+    function addScoreToLeaderboard(score, level) {
+      const lb = getLeaderboard();
+      const now = new Date();
+      const day = now.getDate();
+      const month = now.toLocaleString("en-US", { month: "short" });
+      const entry = { score, level, date: `${month} ${day}` };
+      lb.push(entry);
+      lb.sort((a, b) => b.score - a.score);
+      const trimmed = lb.slice(0, 5);
+      saveLeaderboard(trimmed);
+      return trimmed;
+    }
+
+    function renderLeaderboardRows() {
+      const tbody = document.getElementById("leaderboard-rows");
+      if (!tbody) return;
+      const lb = getLeaderboard();
+      if (!lb.length) {
+        tbody.innerHTML = `<tr>
+          <td colspan="4" style="padding:2px 0; text-align:left;">
+            <strong>Leaderboard</strong> – No scores yet — be the first to set a record.
+          </td>
+        </tr>`;
+        return;
+      }
+
+      let html = "";
+      lb.forEach((e, i) => {
+        html += `<tr>
+          <td style="padding:2px 0;">${i + 1}</td>
+          <td style="text-align:right;padding:2px 0;">${e.score}</td>
+          <td style="text-align:right;padding:2px 0;">${e.level}</td>
+          <td style="text-align:right;padding:2px 0;">${e.date}</td>
+        </tr>`;
+      });
+      tbody.innerHTML = html;
+    }
+
+    let hudMessageTimer = null;
+    let hudMessagesRunning = false;
+
+    function startHudMessages() {
+      const el = document.getElementById("hud-message");
+      if (!el) return;
+
+      const prefix = "This is inspired by enzyme therapy that digests PET microplastics inside cells. ";
+
+      function setRandomMessage() {
+        const idx = Math.floor(Math.random() * ROUNDMESSAGES.length);
+        el.textContent = prefix + ROUNDMESSAGES[idx];
+      }
+
+      setRandomMessage();
+      hudMessagesRunning = true;
+      if (hudMessageTimer) clearInterval(hudMessageTimer);
+      hudMessageTimer = setInterval(setRandomMessage, 8000);
+    }
+
+    function stopHudMessages() {
+      if (hudMessageTimer) clearInterval(hudMessageTimer);
+      hudMessageTimer = null;
+      hudMessagesRunning = false;
+    }
+
+    function clearPlayfieldVisuals() {
+      ctx.clearRect(0, 0, GAMEWIDTH, GAMEHEIGHT);
+      document.getElementById("playfield-hud-top").style.display = "none";
+      document.getElementById("playfield-corehud").style.display = "none";
+      document.getElementById("hud-message").textContent = "";
+      showPowerupBanner(false);
+      showVcBanner(false);
+    }
+
+    function startGame() {
+      initAudio();
+
+      score = 0;
+      health = 100;
+      level = 1;
+      enzymeType = "standard";
+      enzymePower = 1;
+      vcSpeedActive = false;
+      vcCoinCount = 0;
+      marcActivations = 0;
+      paulActivations = 0;
+      firstCofounderTriggered = false;
+
+      microplastics = [];
+      enzymes = [];
+      powerUps = [];
+      effects = [];
+
+      spawnTimer = 0;
+      powerUpTimer = 0;
+      difficultyTimer = 0;
+
+      killCounts.PET = 0; killCounts.PS = 0; killCounts.PE = 0; killCounts.PP = 0;
+      updateKillBoard();
+
+      showPowerupBanner(false);
+      showVcBanner(false);
+      stopAllPowerupVoices();
+      currentCoFounder = null;
+      stopFightMusic();
+
+      document.getElementById("start-screen").style.display = "none";
+      document.getElementById("game-over-screen").style.display = "none";
+
+      document.getElementById("playfield-hud-top").style.display = "block";
+      document.getElementById("playfield-corehud").style.display = "block";
+      document.getElementById("hud-enzyme").textContent = "Enzyme: Standard";
+
+      startHudMessages();
+      gameRunning = true;
+      playFightMusic();
+      gameLoop();
+    }
+
+    function gameOver() {
+      gameRunning = false;
+      stopHudMessages();
+      showPowerupBanner(false);
+      showVcBanner(false);
+      stopAllPowerupVoices();
+      currentCoFounder = null;
+      vcSpeedActive = false;
+      stopFightMusic();
+
+      playSound("gameover");
+
+      clearPlayfieldVisuals();
+
+      document.getElementById("game-over-screen").style.display = "block";
+      document.getElementById("final-score").textContent = score;
+      document.getElementById("level-reached").textContent = `Reached Level ${level}`;
+
+      document.getElementById("end-fact").innerHTML =
+        "Plastic Fact: Microplastics don’t just pollute oceans — they lodge in blood and tissues, quietly rewiring human health from the inside out. Help Elora get them out by supporting us!";
+
+      document.getElementById("round-message").textContent = "";
+
+      document.getElementById("final-kill-PET").textContent = killCounts.PET;
+      document.getElementById("final-kill-PS").textContent = killCounts.PS;
+      document.getElementById("final-kill-PE").textContent = killCounts.PE;
+      document.getElementById("final-kill-PP").textContent = killCounts.PP;
+
+      document.getElementById("final-marc-activations").textContent = marcActivations;
+      document.getElementById("final-paul-activations").textContent = paulActivations;
+      document.getElementById("final-vc-activations").textContent = vcCoinCount;
+
+      addScoreToLeaderboard(score, level);
+      renderLeaderboardRows();
+    }
+  </script>
+</body>
+</html>
