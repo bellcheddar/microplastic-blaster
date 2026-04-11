@@ -1,0 +1,1989 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>MicroPlastic Blaster - Elora Therapeutics</title>
+<style>
+*,
+*::before,
+*::after { margin:0; padding:0; box-sizing:border-box; }
+html,body { width:100%; height:100%; }
+body{
+  background:#0a0a2e;
+  font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif;
+  margin:0;padding:0;
+  overflow:hidden;
+  color:#e0f2ff;
+  display:flex;
+  flex-direction:column;
+  min-height:100vh;
+}
+#page{flex:1 1 auto;display:flex;flex-direction:column;align-items:stretch;width:100%;}
+#game-wrapper{
+  position:relative;
+  width:100%;max-width:100vw;
+  height:min(calc(100vw * 0.75), 100vh);
+  max-height:100vh;
+  min-height:300px;
+  margin:0 auto;
+  background:#020617;
+  overflow:hidden;
+  flex:1 1 auto;
+}
+@media (max-width:700px){
+  #game-wrapper{height:auto;min-height:0;}
+}
+canvas{
+  border:none;
+  border-radius:0;
+  cursor:crosshair;
+  display:block;
+  position:absolute;
+  top:0;left:0;
+}
+
+/* HUD */
+#top-hud{
+  position:absolute;
+  top:6px;left:0;right:0;
+  width:100%;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  z-index:20;
+  pointer-events:none;
+}
+.hud-card{
+  background:rgba(0,0,0,.65);
+  border-radius:17px;
+  border:1px solid rgba(0,229,255,.4);
+  padding:7px 10px;
+  box-shadow:0 0 20px rgba(0,229,255,.25);
+  pointer-events:auto;
+  width:min(1200px, calc(100% - 16px));
+  margin:0 auto;
+}
+.hud-row{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:0 8px;
+  align-items:stretch;
+}
+.hud-title-row{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:0 8px;
+  margin-bottom:4px;
+}
+.hud-title,.hud-title-right{
+  font-size:0.78em;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.14em;
+  color:#e0f2ff;
+  opacity:0.9;
+  text-align:center;
+}
+
+/* activations panel */
+.pf-left{
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+  min-width:0; /* let grid control width */
+}
+.pf-left-header{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+}
+.pf-avatars{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+}
+.pf-avatar,
+.pf-avatar img{width:49px;height:49px;border-radius:50%;}
+.pf-avatar{
+  overflow:hidden;
+  border:2.5px solid rgba(56,189,248,.9);
+  box-shadow:0 0 16px rgba(56,189,248,.7);
+  background:#111827;
+  flex-shrink:0;
+}
+.pf-avatar.marc-avatar img{
+  width:55px;height:49px;object-fit:cover;
+}
+.pf-activations{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  font-size:1.25em;
+  color:#e5e7eb;
+  white-space:nowrap;
+}
+.pf-activations-label{
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  font-size:.95em;
+  color:#cbd5f5;
+  margin-right:4px;
+}
+
+/* activation icons – 2×3 grid */
+.pf-activation-icons{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:4px 4px;
+  border:1px solid rgba(0,229,255,.4);
+  border-radius:10px;
+  padding:5px 7px;
+  background:rgba(0,0,0,.22);
+  width:100%;
+  box-sizing:border-box;
+}
+.pf-activation-icon{
+  display:inline-flex;
+  align-items:center;
+  gap:3px;
+  padding:3px 6px;
+  border-radius:999px;
+  background:rgba(15,23,42,.75);
+  border:1px solid rgba(148,163,184,.38);
+  font-size:0.92em;
+  color:#e0f7ff;
+  white-space:nowrap;
+  min-width:0;
+}
+.pf-activation-icon-label{
+  text-transform:uppercase;
+  letter-spacing:.06em;
+  font-size:.72em;
+  color:#94a3b8;
+  flex-shrink:1;
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.pf-activation-icon-count{
+  font-weight:700;
+  color:#e0f7ff;
+  margin-left:auto;
+}
+
+/* MARC/PAUL images in activation icons */
+.pf-activation-avatar{
+  width:22px;height:22px;
+  border-radius:50%;
+  overflow:hidden;
+  border:1.5px solid rgba(56,189,248,.85);
+  box-shadow:0 0 7px rgba(56,189,248,.7);
+  flex-shrink:0;
+}
+.pf-activation-avatar img{
+  width:100%;height:100%;object-fit:cover;
+}
+
+/* FAST/BOOST/REPAIR/CHAIN circles */
+.pf-activation-circle{
+  width:22px;height:22px;
+  border-radius:50%;
+  background:#0b1220;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  position:relative;
+  box-shadow:0 0 7px rgba(15,23,42,.9);
+  flex-shrink:0;
+}
+.pf-activation-circle.fast{box-shadow:0 0 9px rgba(34,211,238,.9);}
+.pf-activation-circle.boost{box-shadow:0 0 9px rgba(250,204,21,.9);}
+.pf-activation-circle.heal{box-shadow:0 0 9px rgba(248,113,113,.9);}
+.pf-activation-circle.blast{box-shadow:0 0 9px rgba(168,85,247,.9);}
+.pf-activation-circle span{font-size:1.02em;}
+
+/* right side kill chips */
+.pf-right{
+  display:contents; /* transparent wrapper: #kill-panel becomes the grid cell directly */
+}
+
+/* two-row kill panel – 2×3 grid */
+#kill-panel{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  grid-auto-rows:auto;
+  gap:4px 6px;
+  justify-items:stretch;
+  border:1px solid rgba(0,229,255,.4);
+  border-radius:10px;
+  padding:5px 7px;
+  background:rgba(0,0,0,.22);
+  width:100%;
+  box-sizing:border-box;
+  min-width:0;
+  height:100%;
+}
+
+.kill-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:3px;
+  padding:3px 6px;
+  border-radius:999px;
+  background:rgba(15,23,42,.75);
+  border:1px solid rgba(148,163,184,.38);
+  font-size:0.92em;
+  color:#e0f7ff;
+  white-space:nowrap;
+  min-width:0;
+}
+.kill-chip .label-text{
+  max-width:110px;
+  text-overflow:ellipsis;
+  overflow:hidden;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+  font-size:.72em;
+  color:#94a3b8;
+  flex-shrink:1;
+  min-width:0;
+}
+.kill-icon{
+  display:inline-block;
+  width:17px;height:17px;
+  border-radius:50%;
+  background:#111827;
+  position:relative;
+  overflow:hidden;
+  flex-shrink:0;
+}
+.kill-icon-inner{position:absolute;inset:0;}
+.kill-icon.PET .kill-icon-inner{
+  background:#a29bfe;
+  box-shadow:inset 0 0 0 2px rgba(0,0,0,.4);
+  border-radius:0;
+}
+.kill-icon.PS .kill-icon-inner{background:#7bed9f;border-radius:50%;}
+.kill-icon.PE .kill-icon-inner{
+  background:#ffa502;
+  border-radius:50%;
+  box-shadow:inset 0 0 0 2px rgba(0,0,0,.4);
+}
+.kill-icon.PP .kill-icon-inner{
+  background:#ff4757;
+  clip-path:polygon(50% 0,90% 20%,80% 60%,40% 100%,10% 70%,20% 20%);
+  border-radius:0;
+}
+
+/* Water/coffee use images */
+.kill-icon.WATER,
+.kill-icon.COFFEE{
+  background:transparent;
+  border-radius:4px;
+  overflow:hidden;
+}
+.kill-icon.WATER img,
+.kill-icon.COFFEE img{
+  width:100%;height:100%;object-fit:contain;
+}
+
+/* #pf-stats – game info grid (3rd column in top HUD) */
+#pf-stats{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:4px 6px;
+  justify-items:stretch;
+  border:1px solid rgba(0,229,255,.4);
+  border-radius:10px;
+  padding:5px 7px;
+  background:rgba(0,0,0,.22);
+  width:100%;
+  box-sizing:border-box;
+  min-width:0;
+  height:100%;
+}
+#pf-stats .kill-chip{
+  justify-content:space-between;
+  pointer-events:auto;
+}
+#pf-stats .stat-val{
+  font-weight:700;
+  color:#e0f7ff;
+  margin-left:auto;
+  font-size:0.95em;
+}
+#pf-stats button{
+  background:transparent;
+  border:none;
+  color:inherit;
+  cursor:pointer;
+  font-size:0.95em;
+  padding:0;
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+}
+
+/* Microplastic Insight overlay bottom-left */
+/* bottom flex bar holds insight box */
+/* bottom-bar is a transparent pass-through; insight-overlay positioned directly by JS */
+#bottom-bar{display:contents;}
+#insight-overlay{
+  position:absolute;
+  width:300px;
+  max-width:300px;
+  padding:6px 10px;
+  border-radius:8px;
+  background:radial-gradient(circle at 0 0,
+    rgba(56,189,248,0.22),
+    rgba(15,23,42,0.92));
+  color:#e0f2ff;
+  font-size:0.88em;
+  line-height:1.35;
+  pointer-events:none;
+  z-index:18;
+  /* top/left set by resizeCanvas() */
+}
+#insight-title{
+  font-size:.78em;
+  font-weight:600;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:#7dd3fc;
+  margin-bottom:2px;
+}
+#insight-text{
+  font-size:0.88em;
+  color:#e0f2ff;
+  word-wrap:break-word;
+}
+
+/* mute/pause icons */
+.icon-btn{
+  width:25px;height:25px;
+  border-radius:50%;
+  border:1px solid rgba(148,163,184,.6);
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(15,23,42,.9);
+}
+.icon-btn span{font-size:15px;line-height:1;}
+
+/* powerup timer */
+#powerup-timer{
+  position:absolute;
+  padding:5px 12px;
+  border-radius:999px;
+  background:rgba(15,23,42,.85);
+  border:1px solid rgba(96,165,250,.7);
+  font-size:1.2em;
+  color:#e0f2ff;
+  z-index:19;
+  pointer-events:none;
+  text-shadow:0 0 6px rgba(59,130,246,.8);
+  display:none;
+  /* top/right set by resizeCanvas() */
+}
+
+/* overlays */
+.ui-overlay{
+  position:fixed;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  pointer-events:none;
+  padding:10px;
+  z-index:100;
+}
+.start-screen,.game-over-screen{
+  background:rgba(10,10,46,.95);
+  border:2px solid #00e5ff;
+  border-radius:16px;
+  padding:18px 18px 16px 18px;
+  text-align:center;
+  color:#fff;
+  pointer-events:auto;
+  max-width:520px;
+  width:100%;
+}
+.game-over-screen{display:none;max-height:90vh;overflow-y:auto;}
+h1{
+  font-size:2em;
+  color:#00e5ff;
+  margin:0 0 8px 0;
+  text-shadow:0 0 20px rgba(0,229,255,.5);
+}
+.subtitle{color:#a0a0d0;font-size:.95em;margin-bottom:10px;}
+.narrative{color:#c0c0e0;font-size:.9em;margin-bottom:8px;}
+.info-text{color:#c0c0e0;font-size:.85em;line-height:1.5;margin:8px 0;}
+.btn{
+  background:linear-gradient(135deg,#00e5ff,#00b8d4);
+  color:#0a0a2e;
+  border:none;
+  padding:10px 26px;
+  font-size:1em;
+  font-weight:bold;
+  border-radius:30px;
+  cursor:pointer;
+  margin-top:6px;
+  transition:all .3s;
+}
+.btn:hover{transform:scale(1.05);box-shadow:0 0 20px rgba(0,229,255,.5);}
+.logo-text{font-size:.8em;color:#7070a0;margin-top:6px;}
+.logo-text a{color:#00e5ff;text-decoration:none;}
+.final-score{font-size:2em;color:#00e5ff;}
+.round-message{margin-top:6px;font-size:.8em;color:#c0c0e0;font-style:italic;}
+.go-elora-link{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  margin-top:8px;
+  padding:8px 14px;
+  border-radius:999px;
+  border:1px solid rgba(0,229,255,.6);
+  background:rgba(0,0,0,.3);
+  color:#e0f7ff;
+  font-size:.8em;
+  text-decoration:none;
+}
+.go-elora-link .pill{
+  background:linear-gradient(135deg,#00e5ff,#00b8d4);
+  color:#00111a;
+  padding:4px 10px;
+  border-radius:999px;
+  font-size:.7em;
+  text-transform:uppercase;
+  letter-spacing:.15em;
+}
+/* name entry */
+#name-entry{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  justify-content:center;
+  margin:8px 0 4px 0;
+}
+#player-name-input{
+  background:rgba(15,23,42,0.9);
+  border:1.5px solid rgba(0,229,255,0.7);
+  border-radius:999px;
+  color:#e0f7ff;
+  font-size:0.95em;
+  padding:5px 14px;
+  outline:none;
+  width:160px;
+  text-align:center;
+}
+#player-name-input::placeholder{color:rgba(180,200,230,0.5);}
+#submit-score-btn{
+  background:linear-gradient(135deg,#00e5ff,#00b8d4);
+  color:#0a0a2e;
+  border:none;
+  padding:5px 16px;
+  font-size:0.9em;
+  font-weight:bold;
+  border-radius:999px;
+  cursor:pointer;
+}
+
+/* powerup banner */
+#powerup-banner{
+  position:absolute;
+  top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  padding:6px 14px;
+  border-radius:999px;
+  background:radial-gradient(circle at 0 0,
+    rgba(34,211,238,.35),rgba(79,70,229,.25));
+  color:#e0f2ff;
+  font-size:1em;
+  font-weight:600;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  box-shadow:0 0 8px rgba(56,189,248,.35),
+             0 0 18px rgba(59,130,246,.3);
+  border:1px solid rgba(191,219,254,.4);
+  display:none;
+  pointer-events:none;
+  text-align:center;
+  z-index:25;
+  opacity:.9;
+}
+
+/* generic powerup label class (not used as DOM elements anymore) */
+.powerup-label{
+  position:absolute;
+  font-size:.9em;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:.12em;
+  color:#e0f2ff;
+  text-shadow:
+    0 0 5px rgba(56,189,248,0.9),
+    0 0 12px rgba(37,99,235,0.8);
+  pointer-events:none;
+  z-index:17;
+}
+
+@media (max-width:900px){
+  .pf-core-row{flex-wrap:wrap;}
+}
+@media (max-width:700px){
+  .hud-row{flex-wrap:wrap;}
+  .pf-right{justify-content:flex-start;}
+  .start-screen,.game-over-screen{max-width:94vw;padding:12px 12px 10px 12px;}
+  h1{font-size:1.6em;}
+  .pf-core-item{font-size:1em;}
+
+}
+
+
+/* responsive-mobile-hud */
+@media (max-width:900px){
+  .hud-card{
+    width:min(100% - 12px, 1200px);
+    padding:6px 8px;
+    border-radius:15px;
+  }
+  .hud-row,.hud-title-row{gap:0 6px;}
+  .hud-title,.hud-title-right{font-size:.72em;letter-spacing:.12em;}
+  .pf-left-header{gap:8px;}
+  .pf-avatars{gap:6px;}
+  .pf-avatar,.pf-avatar img{width:42px;height:42px;}
+  .pf-avatar.marc-avatar img{width:46px;height:42px;}
+  .pf-activations{font-size:1.05em;gap:4px;}
+  .pf-activations-label{font-size:.84em;margin-right:2px;}
+  .pf-activation-icons,#kill-panel,#pf-stats{padding:5px 6px;gap:4px;}
+  .pf-activation-icon,.kill-chip{font-size:.84em;padding:2px 5px;}
+  .pf-activation-icon-label,.kill-chip .label-text{font-size:.68em;}
+  .pf-activation-avatar,.pf-activation-circle{width:20px;height:20px;}
+  .pf-activation-circle span{font-size:.92em;}
+  .kill-icon{width:15px;height:15px;}
+  #pf-stats button{font-size:.88em;}
+  #pf-stats .stat-val{font-size:.9em;}
+  #insight-overlay{
+    width:min(260px, calc(100vw - 24px));
+    max-width:min(260px, calc(100vw - 24px));
+    padding:6px 8px;
+    font-size:.82em;
+    line-height:1.3;
+  }
+  .insight-title{font-size:.72em;}
+  #powerup-timer{padding:4px 10px;font-size:1em;}
+  #powerup-banner{
+    max-width:calc(100vw - 24px);
+    padding:6px 12px;
+    font-size:.9em;
+  }
+  .icon-btn{width:23px;height:23px;}
+  .icon-btn span{font-size:13px;}
+}
+
+@media (max-width:700px){
+  .hud-card{
+    width:calc(100% - 8px);
+    padding:6px;
+    border-radius:14px;
+  }
+  .hud-title-row{display:none;}
+  .hud-row{
+    grid-template-columns:1fr;
+    gap:6px;
+  }
+  .pf-left::before,
+  #kill-panel::before,
+  #pf-stats::before{
+    display:block;
+    font-size:.68em;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.12em;
+    color:#e0f2ff;
+    opacity:.9;
+    margin-bottom:4px;
+  }
+  .pf-left::before{content:'Powerups';}
+  #kill-panel::before{content:'Microplastics Removed';grid-column:1 / -1;}
+  #pf-stats::before{content:'Game Info';grid-column:1 / -1;}
+  .pf-left-header{gap:7px;}
+  .pf-avatars{gap:5px;}
+  .pf-avatar,.pf-avatar img{width:36px;height:36px;}
+  .pf-avatar.marc-avatar img{width:40px;height:36px;}
+  .pf-activations{font-size:.95em;gap:4px;}
+  .pf-activations-label{font-size:.8em;}
+  .pf-activation-icons,
+  #kill-panel,
+  #pf-stats{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:4px;
+    padding:5px;
+  }
+  .pf-activation-icon,
+  .kill-chip{
+    font-size:.8em;
+    padding:2px 5px;
+  }
+  .pf-activation-icon-label,
+  .kill-chip .label-text{font-size:.66em;}
+  .pf-activation-avatar,
+  .pf-activation-circle{width:18px;height:18px;}
+  .pf-activation-circle span{font-size:.82em;}
+  .kill-icon{width:14px;height:14px;}
+  #pf-stats button{font-size:.84em;}
+  #pf-stats .stat-val{font-size:.86em;}
+  #insight-overlay{
+    width:min(220px, calc(100vw - 20px));
+    max-width:min(220px, calc(100vw - 20px));
+    padding:5px 7px;
+    font-size:.78em;
+    line-height:1.28;
+  }
+  .insight-title{font-size:.68em;letter-spacing:.14em;}
+  #powerup-timer{padding:4px 8px;font-size:.92em;}
+  #powerup-banner{
+    max-width:calc(100vw - 20px);
+    padding:5px 10px;
+    font-size:.82em;
+    line-height:1.2;
+  }
+  .start-screen,.game-over-screen{
+    max-width:min(94vw, 420px);
+    padding:12px 12px 10px 12px;
+    margin:auto;
+  }
+  h1{font-size:1.5em;}
+  .subtitle{font-size:.9em;}
+  .narrative{font-size:.86em;}
+  .info-text{font-size:.82em;}
+  .final-score{font-size:1.6em;}
+  #name-entry{
+    flex-direction:column;
+    gap:6px;
+  }
+  #player-name-input{
+    width:min(220px, 80vw);
+  }
+  #submit-score-btn{width:auto;}
+  .go-elora-link{
+    font-size:.76em;
+    gap:5px;
+    padding:7px 12px;
+  }
+}
+
+@media (max-width:480px){
+  .hud-card{width:calc(100% - 6px);padding:5px;}
+  .pf-activation-icons,
+  #kill-panel,
+  #pf-stats{gap:3px;padding:4px;}
+  .pf-activation-icon,
+  .kill-chip{font-size:.76em;padding:2px 4px;}
+  .pf-activation-icon-label,
+  .kill-chip .label-text{font-size:.62em;letter-spacing:.05em;}
+  .pf-avatar,.pf-avatar img{width:32px;height:32px;}
+  .pf-avatar.marc-avatar img{width:35px;height:32px;}
+  .pf-activations{font-size:.88em;}
+  #insight-overlay{
+    width:min(190px, calc(100vw - 16px));
+    max-width:min(190px, calc(100vw - 16px));
+    padding:4px 6px;
+    font-size:.72em;
+  }
+  #powerup-timer{font-size:.84em;}
+  #powerup-banner{font-size:.76em;}
+  .start-screen,.game-over-screen{padding:10px 10px 9px 10px;}
+  h1{font-size:1.35em;}
+  .btn{padding:9px 18px;font-size:.92em;}
+}
+
+
+
+/* mobile-fullwidth-hud-and-playfield */
+@media (max-width:700px){
+  html,body,#page{
+    height:100dvh;
+    min-height:100dvh;
+  }
+  #game-wrapper{
+    height:100dvh !important;
+    min-height:100dvh !important;
+    max-height:100dvh;
+  }
+  #top-hud{
+    left:0;
+    right:0;
+    width:100%;
+    top:4px;
+  }
+  .hud-card{
+    width:calc(100% - 6px);
+    padding:4px 5px;
+    border-radius:12px;
+  }
+  .hud-title-row{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:0 4px;
+    margin-bottom:3px;
+  }
+  .hud-row{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:0 4px;
+    align-items:stretch;
+  }
+  .hud-title,.hud-title-right{
+    font-size:.56em;
+    letter-spacing:.08em;
+  }
+  .pf-left::before,
+  #kill-panel::before,
+  #pf-stats::before{
+    content:none !important;
+    display:none !important;
+  }
+  .pf-left{
+    gap:3px;
+  }
+  .pf-left-header{
+    gap:4px;
+    min-width:0;
+  }
+  .pf-avatars{
+    gap:3px;
+    flex-shrink:0;
+  }
+  .pf-avatar,.pf-avatar img{
+    width:24px;
+    height:24px;
+  }
+  .pf-avatar.marc-avatar img{
+    width:27px;
+    height:24px;
+  }
+  .pf-activations{
+    gap:3px;
+    font-size:.72em;
+    min-width:0;
+  }
+  .pf-activations-label{
+    font-size:.7em;
+    margin-right:1px;
+  }
+  .pf-activation-icons,
+  #kill-panel,
+  #pf-stats{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:2px 3px;
+    padding:3px 4px;
+    border-radius:8px;
+  }
+  .pf-activation-icon,
+  .kill-chip{
+    gap:2px;
+    padding:1px 4px;
+    font-size:.62em;
+    min-width:0;
+  }
+  .pf-activation-icon-label,
+  .kill-chip .label-text{
+    max-width:none;
+    font-size:.54em;
+    letter-spacing:.04em;
+  }
+  .pf-activation-icon-count,
+  #pf-stats .stat-val{
+    font-size:.78em;
+  }
+  .pf-activation-avatar,
+  .pf-activation-circle{
+    width:14px;
+    height:14px;
+  }
+  .pf-activation-circle span{
+    font-size:.62em;
+  }
+  .kill-icon{
+    width:11px;
+    height:11px;
+  }
+  #pf-stats button{
+    font-size:.7em;
+    gap:2px;
+  }
+  #powerup-timer{
+    font-size:.78em;
+    padding:3px 7px;
+  }
+  #insight-overlay{
+    width:min(180px, calc(100vw - 14px));
+    max-width:min(180px, calc(100vw - 14px));
+    padding:4px 6px;
+    font-size:.68em;
+    line-height:1.22;
+  }
+  .insight-title{
+    font-size:.6em;
+    margin-bottom:1px;
+  }
+}
+
+@media (max-width:420px){
+  .hud-card{
+    width:calc(100% - 4px);
+    padding:3px 4px;
+  }
+  .hud-title,.hud-title-right{
+    font-size:.5em;
+    letter-spacing:.06em;
+  }
+  .pf-avatar,.pf-avatar img{
+    width:22px;
+    height:22px;
+  }
+  .pf-avatar.marc-avatar img{
+    width:24px;
+    height:22px;
+  }
+  .pf-activations{
+    font-size:.68em;
+  }
+  .pf-activation-icons,
+  #kill-panel,
+  #pf-stats{
+    gap:2px;
+    padding:3px;
+  }
+  .pf-activation-icon,
+  .kill-chip{
+    padding:1px 3px;
+    font-size:.58em;
+  }
+  .pf-activation-icon-label,
+  .kill-chip .label-text{
+    font-size:.5em;
+  }
+  .pf-activation-avatar,
+  .pf-activation-circle{
+    width:12px;
+    height:12px;
+  }
+  .kill-icon{
+    width:10px;
+    height:10px;
+  }
+  #pf-stats button{
+    font-size:.66em;
+  }
+}
+
+</style>
+</head>
+<body>
+<div id="page">
+  <div id="game-wrapper">
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="top-hud">
+      <div class="hud-card">
+        <div class="hud-title-row">
+          <div class="hud-title">POWERUPS!</div>
+          <div class="hud-title-right">MICROPLASTICS REMOVED!</div>
+          <div class="hud-title-right">GAME INFO</div>
+        </div>
+        <div class="hud-row">
+          <div class="pf-left">
+            <div class="pf-activation-icons">
+              <div class="pf-activation-icon">
+                <span class="pf-activation-icon-label">Marc x10</span>
+                <span class="pf-activation-avatar">
+                  <img src="marc.png" alt="Marc Powerup">
+                </span>
+                <span class="pf-activation-icon-count" id="act-MARC">0</span>
+              </div>
+              <div class="pf-activation-icon">
+                <span class="pf-activation-icon-label">Paul x10</span>
+                <span class="pf-activation-avatar">
+                  <img src="paul.png" alt="Paul Powerup">
+                </span>
+                <span class="pf-activation-icon-count" id="act-PAUL">0</span>
+              </div>
+              <div class="pf-activation-icon">
+                <span class="pf-activation-icon-label">FAST</span>
+                <span class="pf-activation-circle fast" aria-hidden="true">
+                  <span>⚡</span>
+                </span>
+                <span class="pf-activation-icon-count" id="act-FAST">0</span>
+              </div>
+              <div class="pf-activation-icon">
+                <span class="pf-activation-icon-label">Boost</span>
+                <span class="pf-activation-circle boost" aria-hidden="true">
+                  <span>💪</span>
+                </span>
+                <span class="pf-activation-icon-count" id="act-BOOST">0</span>
+              </div>
+              <div class="pf-activation-icon">
+                <span class="pf-activation-icon-label">Repair</span>
+                <span class="pf-activation-circle heal" aria-hidden="true">
+                  <span>❤️</span>
+                </span>
+                <span class="pf-activation-icon-count" id="act-HEAL">0</span>
+              </div>
+              <div class="pf-activation-icon">
+                <span class="pf-activation-icon-label">Chain</span>
+                <span class="pf-activation-circle blast" aria-hidden="true">
+                  <span>💥</span>
+                </span>
+                <span class="pf-activation-icon-count" id="act-BLAST">0</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="pf-right">
+            <div id="kill-panel">
+              <span class="kill-chip">
+                <span class="kill-icon WATER">
+                  <img src="aquafina_new.png" alt="Water bottle">
+                </span>
+                <span class="label-text">Bottled Water</span>
+                <span id="kill-WATER">0</span>
+              </span>
+              <span class="kill-chip">
+                <span class="kill-icon COFFEE">
+                  <img src="starbucks_new.png" alt="Coffee cup">
+                </span>
+                <span class="label-text">Coffee Cup</span>
+                <span id="kill-COFFEE">0</span>
+              </span>
+              <span class="kill-chip">
+                <span class="kill-icon PET"><span class="kill-icon-inner"></span></span>
+                <span class="label-text">PET</span>
+                <span id="kill-PET">0</span>
+              </span>
+              <span class="kill-chip">
+                <span class="kill-icon PS"><span class="kill-icon-inner"></span></span>
+                <span class="label-text">PS</span>
+                <span id="kill-PS">0</span>
+              </span>
+              <span class="kill-chip">
+                <span class="kill-icon PE"><span class="kill-icon-inner"></span></span>
+                <span class="label-text">PE</span>
+                <span id="kill-PE">0</span>
+              </span>
+              <span class="kill-chip">
+                <span class="kill-icon PP"><span class="kill-icon-inner"></span></span>
+                <span class="label-text">PP</span>
+                <span id="kill-PP">0</span>
+              </span>
+            </div>
+
+          <div id="pf-stats">
+            <span class="kill-chip">
+              <span class="label-text">Score</span>
+              <span class="stat-val" id="hud-score" style="color:#00e5ff;">0</span>
+            </span>
+            <span class="kill-chip">
+              <span class="label-text">Level</span>
+              <span class="stat-val" id="hud-level" style="color:#7dd3fc;">1</span>
+            </span>
+            <span class="kill-chip">
+              <span class="label-text">Health</span>
+              <span class="stat-val" id="hud-health" style="color:#4ecdc4;">100</span>
+            </span>
+            <span class="kill-chip">
+              <span class="label-text">Enzyme</span>
+              <span class="stat-val" id="hud-enzyme" style="color:#ffd32a;">Std</span>
+            </span>
+            <span class="kill-chip">
+              <button id="hud-mute" onclick="toggleMute()" aria-label="Mute / Unmute">
+                <span id="hud-mute-icon">🔊</span><span class="label-text">Mute</span>
+              </button>
+            </span>
+            <span class="kill-chip">
+              <button id="hud-pause" onclick="togglePause()" aria-label="Pause / Resume">
+                <span id="hud-pause-icon">⏸</span><span class="label-text">Pause</span>
+              </button>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- bottom flex bar: always-visible insight panel -->
+    <div id="bottom-bar">
+      <div id="insight-overlay">
+        <div id="insight-title">Microplastic Insight</div>
+        <div id="insight-text"></div>
+      </div>
+    </div>
+
+    <!-- powerup timer bottom-right -->
+    <div id="powerup-timer">Powerup 0.0s</div>
+
+    <!-- overlays -->
+    <div class="ui-overlay">
+      <div id="start-screen" class="start-screen">
+        <h1>MicroPlastic Blaster</h1>
+        <p class="subtitle">Deploy Enzymes. Destroy Microplastics. Save the Body.</p>
+        <p class="narrative">
+          You're the body's enzyme defense, stopping harmful microplastics before they damage cells.
+        </p>
+        <div class="fact-box">
+          <strong>Did you know?</strong> Humans ingest 5 grams of microplastic per week—roughly the weight of a credit card.
+          Elora Therapeutics is developing the first FDA-targeted enzyme therapy to remove them.
+        </div>
+        <p class="info-text">
+          <strong>Click</strong> to launch enzyme blasts at microplastic particles<br>
+          <strong>Protect</strong> the cell from incoming microplastics<br>
+          <strong>Collect</strong> power-ups to boost your enzyme potency<br>
+          <strong>Survive</strong> as long as you can and set a high score!
+        </p>
+        <button class="btn" onclick="startGame()">Launch Enzymes!</button>
+        <button class="btn"
+                style="margin-top:4px;background:transparent;color:#e0f7ff;border:1px solid rgba(0,229,255,.7)"
+                onclick="toggleLeaderboardPanel()">
+          View Leaderboard
+        </button>
+        <div id="start-leaderboard"
+             style="margin-top:6px;display:none;font-size:0.8em;color:#c0c0e0;text-align:left;"></div>
+        <p class="logo-text">
+          A game by <a href="https://www.eloratherapeutics.com" target="_blank">Elora Therapeutics</a><br>
+          First-in-class enzyme therapy to remove microplastics from humans
+        </p>
+      </div>
+
+      <div id="game-over-screen" class="game-over-screen">
+        <h1>Cell Overwhelmed!</h1>
+        <p class="subtitle">The microplastics broke through your enzyme defense</p>
+        <p id="final-score" class="final-score">0</p>
+        <p style="color:#a0a0d0">Microplastics Destroyed</p>
+        <div id="level-reached" style="color:#4ecdc4;margin:8px 0"></div>
+
+        <div id="name-entry">
+          <input id="player-name-input" type="text" maxlength="20" placeholder="Enter your name…" autocomplete="off">
+          <button id="submit-score-btn" onclick="submitNamedScore()">Submit</button>
+        </div>
+        <div id="leaderboard" style="margin:6px auto 4px auto;font-size:0.8em;color:#c0c0e0;text-align:left;max-width:420px;"></div>
+        <div class="round-message" id="round-message"></div>
+        <a class="go-elora-link" href="https://eloratherapeutics.com" target="_blank" rel="noopener noreferrer">
+          <span class="pill">Learn more</span>
+          <span>Elora Therapeutics — First-in-class enzyme therapy to remove microplastics from humans.</span>
+        </a>
+        <div style="margin-top:10px">
+          <button class="btn" onclick="startGame()">Try Again</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="powerup-banner"><span><strong>Elora Therapeutics</strong> Powerup!</span></div>
+  </div>
+</div>
+
+<script>
+const canvas=document.getElementById('gameCanvas');
+const ctx=canvas.getContext('2d');
+const GAMEWIDTH=800,GAMEHEIGHT=600;
+canvas.width=GAMEWIDTH;canvas.height=GAMEHEIGHT;
+
+function resizeCanvas(){
+  const wrapper=document.getElementById('game-wrapper');
+  const w=wrapper.clientWidth,h=wrapper.clientHeight;
+  const scale=Math.min(w/GAMEWIDTH,h/GAMEHEIGHT);
+  const dw=GAMEWIDTH*scale,dh=GAMEHEIGHT*scale;
+  const cl=Math.round((w-dw)/2), ct=Math.round((h-dh)/2);
+
+  canvas.style.width=dw+'px';
+  canvas.style.height=dh+'px';
+  canvas.style.left=cl+'px';
+  canvas.style.top=ct+'px';
+
+  /* ── insight-overlay: bottom of playfield, 12px above canvas bottom edge ── */
+  const hudPx=Math.round(HUD_SAFE_Y*scale);
+  const ins=document.getElementById('insight-overlay');
+  if(ins){
+    ins.style.left=(cl+12)+'px';
+    ins.style.top=(ct+dh-12)+'px';
+    ins.style.transform='translateY(-100%)';  // pull up by own height so bottom sits at canvas bottom
+  }
+
+  /* ── powerup-timer: top-right of canvas, just below HUD ── */
+  const pt=document.getElementById('powerup-timer');
+  if(pt){
+    pt.style.top=(ct+hudPx+10)+'px';
+    pt.style.right=(cl+16)+'px';
+  }
+}
+window.addEventListener('resize',resizeCanvas);
+window.addEventListener('orientationchange',resizeCanvas);
+window.addEventListener('load',()=>{
+  resizeCanvas();
+  const el=document.getElementById('insight-text');
+  if(el) el.textContent=ROUNDMESSAGES[0];
+});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)resizeCanvas();});
+function getGameCoords(x,y){
+  const r=canvas.getBoundingClientRect();
+  return {x:(x-r.left)*(GAMEWIDTH/r.width),y:(y-r.top)*(GAMEHEIGHT/r.height)};
+}
+
+/* state */
+let gameRunning=false,gamePaused=false;
+let score=0,health=100,level=1;
+let enzymeType='standard',enzymePower=1;
+let enzymes=[],powerUps=[],effects=[],microplastics=[];
+let spawnTimer=0,powerUpTimer=0,difficultyTimer=0,cellPulse=0;
+let backgroundStars=[];
+const killCounts={PET:0,PS:0,PE:0,PP:0,WATER:0,COFFEE:0,FAST:0,BOOST:0,HEAL:0,BLAST:0};
+let powerupActivations={MARC:0,PAUL:0,FAST:0,BOOST:0,HEAL:0,BLAST:0};
+
+/* assets */
+const marcImg=new Image();marcImg.src='marc.png';
+const paulImg=new Image();paulImg.src='paul.png';
+const aquafinaImg=new Image();aquafinaImg.src='aquafina_new.png';
+const starbucksImg=new Image();starbucksImg.src='starbucks_new.png';
+const eloraLogoImg=new Image();eloraLogoImg.src='Elora-Therapeutics-LogoStackedBlue.jpg';
+
+/* audio */
+const AudioCtx=window.AudioContext||window.webkitAudioContext;
+let audioCtx=null,muted=false,audioInitialized=false;
+let fightTrack=null;
+const marcVoice=new Audio('marc.mp3');
+const paulVoice=new Audio('paul.mp3');
+let currentCoFounder=null;
+
+function stopAllPowerupVoices(){
+  marcVoice.pause();paulVoice.pause();
+  marcVoice.currentTime=0;paulVoice.currentTime=0;
+}
+function initAudio(){
+  if(audioInitialized)return;
+  audioInitialized=true;
+  try{audioCtx=new AudioCtx();}catch(e){}
+  marcVoice.muted=true;paulVoice.muted=true;
+  marcVoice.play().then(()=>marcVoice.pause()).catch(()=>{});
+  paulVoice.play().then(()=>paulVoice.pause()).catch(()=>{});
+  marcVoice.muted=false;paulVoice.muted=false;
+  fightTrack=new Audio('fight.mp3');
+  fightTrack.loop=true;
+  fightTrack.volume=0.75;
+}
+canvas.addEventListener('click',initAudio,{once:true});
+canvas.addEventListener('touchstart',initAudio,{once:true});
+
+function applyAudioState(){
+  if(fightTrack){
+    if(gameRunning && !gamePaused && !muted && !currentCoFounder){
+      if(fightTrack.paused)fightTrack.play().catch(()=>{});
+    }else{
+      fightTrack.pause();
+    }
+  }
+  if(marcVoice){
+    if(muted || gamePaused || !gameRunning) marcVoice.pause();
+  }
+  if(paulVoice){
+    if(muted || gamePaused || !gameRunning) paulVoice.pause();
+  }
+}
+function toggleMute(){
+  muted=!muted;
+  document.getElementById('hud-mute-icon').textContent=muted?'🔇':'🔊';
+  applyAudioState();
+}
+function togglePause(){
+  if(!gameRunning)return;
+  gamePaused=!gamePaused;
+  document.getElementById('hud-pause-icon').textContent=gamePaused?'▶':'⏸';
+  applyAudioState();
+  if(!gamePaused)gameLoop();
+}
+function playSound(type){
+  if(!audioCtx || muted || gamePaused || !gameRunning)return;
+  const now=audioCtx.currentTime;
+  const o=audioCtx.createOscillator();
+  const g=audioCtx.createGain();
+  o.connect(g);g.connect(audioCtx.destination);
+  if(type==='shoot'){
+    o.type='square';o.frequency.setValueAtTime(700,now);
+    g.gain.setValueAtTime(0.12,now);
+    g.gain.exponentialRampToValueAtTime(0.001,now+0.08);
+    o.start(now);o.stop(now+0.08);
+  }else if(type==='shoot-marc'){
+    o.type='triangle';o.frequency.setValueAtTime(950,now);
+    g.gain.setValueAtTime(0.16,now);
+    g.gain.exponentialRampToValueAtTime(0.001,now+0.1);
+    o.start(now);o.stop(now+0.1);
+  }else if(type==='shoot-paul'){
+    o.type='sine';o.frequency.setValueAtTime(520,now);
+    g.gain.setValueAtTime(0.16,now);
+    g.gain.exponentialRampToValueAtTime(0.001,now+0.12);
+    o.start(now);o.stop(now+0.12);
+  }
+}
+marcVoice.addEventListener('ended',()=>{if(currentCoFounder==='marc')clearCofounderPower();});
+paulVoice.addEventListener('ended',()=>{if(currentCoFounder==='paul')clearCofounderPower();});
+function playMarcVoice(){
+  stopAllPowerupVoices();
+  currentCoFounder='marc';
+  applyAudioState();
+  if(muted || gamePaused || !gameRunning)return;
+  marcVoice.loop=false;marcVoice.currentTime=0;
+  marcVoice.play().catch(()=>{});
+}
+function playPaulVoice(){
+  stopAllPowerupVoices();
+  currentCoFounder='paul';
+  applyAudioState();
+  if(muted || gamePaused || !gameRunning)return;
+  paulVoice.loop=false;paulVoice.currentTime=0;
+  paulVoice.play().catch(()=>{});
+}
+
+/* helpers */
+function cellYPos(){return GAMEHEIGHT-50;}  /* logo visible, ~23% cell clipped at bottom */
+const HUD_SAFE_Y = 120;
+
+for(let i=0;i<80;i++){
+  backgroundStars.push({
+    x:Math.random()*GAMEWIDTH,
+    y:Math.random()*GAMEHEIGHT,
+    size:Math.random()*2,
+    alpha:Math.random()*0.5+0.1,
+    speed:Math.random()*0.3+0.1
+  });
+}
+const MPTYPES=[
+  {name:'Polypropylene',short:'PP',color:'#ff4757',size:20,speed:0.8,hp:1,points:15,shape:'jagged'},
+  {name:'Polyethylene',short:'PE',color:'#ffa502',size:22,speed:0.7,hp:2,points:20,shape:'foam'},
+  {name:'Polystyrene',short:'PS',color:'#7bed9f',size:18,speed:0.95,hp:2,points:25,shape:'circle'},
+  {name:'Polyethylene terephthalate',short:'PET',color:'#a29bfe',size:24,speed:0.6,hp:3,points:30,shape:'block'}
+];
+const ROUNDMESSAGES=[
+  "Microplastics don't just pollute oceans – they lodge in blood and tissues, quietly rewiring human health from the inside out.",
+  "Tiny plastic fragments slip past our natural defenses, accumulating where biology has no built-in way to break them down or clear them.",
+  "PET microplastics behave like a stealth toxin, linked to chronic inflammation, metabolic dysfunction, and hormone disruption in humans.",
+  "Every sip and breath can add more microplastic to a lifelong burden our bodies were never evolved to handle.",
+  "Once microplastics cross into organs and circulation, they turn from environmental trash into a persistent, internal exposure risk.",
+  "Plastic particles can infiltrate cells and immune pathways, stoking oxidative stress and inflammatory signals that won't easily switch off.",
+  "Because we lack enzymes to digest synthetic polymers, microplastics can linger for years, acting as slow, silent drivers of disease.",
+  "The same PET used in bottles and packaging is now turning up in human blood, raising hard questions about long-term health effects.",
+  "Microplastics carry thousands of plastic-linked chemicals, creating a complex cocktail of potential endocrine and metabolic disruptors in the body.",
+  "Without a way to actively remove them, microplastics risk becoming a permanent feature of human biology rather than a temporary contaminant."
+];
+const POWERUPDURATIONMS=10000;
+const POWERUPTYPES=[
+  {name:'FAST-PETase',color:'#00e5ff',emoji:'⚡',effect:'rapid',duration:POWERUPDURATIONMS,key:'FAST'},
+  {name:'Enzyme Boost',color:'#ffd32a',emoji:'💪',effect:'power',duration:POWERUPDURATIONMS,key:'BOOST'},
+  {name:'Cell Repair',color:'#ff4757',emoji:'❤️',effect:'heal',duration:POWERUPDURATIONMS,key:'HEAL'},
+  {name:'Chain Reaction',color:'#a29bfe',emoji:'💥',effect:'blast',duration:POWERUPDURATIONMS,key:'BLAST'}
+];
+const MARCPOWERUP={name:'Marc x10',effect:'marc',color:'#38bdf8',emoji:'M',duration:POWERUPDURATIONMS};
+const PAULPOWERUP={name:'Paul x10',effect:'paul',color:'#22c55e',emoji:'P',duration:POWERUPDURATIONMS};
+let activePowerup=null,powerupEndTime=0,powerupTimerInterval=null;
+
+/* drawing */
+function drawBackground(){
+  const g=ctx.createRadialGradient(GAMEWIDTH/2,GAMEHEIGHT/2,50,GAMEWIDTH/2,GAMEHEIGHT/2,GAMEWIDTH/2);
+  g.addColorStop(0,'#1a1a4e');g.addColorStop(0.5,'#0f0f3a');g.addColorStop(1,'#050520');
+  ctx.fillStyle=g;ctx.fillRect(0,0,GAMEWIDTH,GAMEHEIGHT);
+  backgroundStars.forEach(s=>{
+    s.y+=s.speed;if(s.y>GAMEHEIGHT){s.y=0;s.x=Math.random()*GAMEWIDTH;}
+    ctx.beginPath();ctx.arc(s.x,s.y,s.size,0,Math.PI*2);
+    ctx.fillStyle=`rgba(100,100,200,${s.alpha})`;ctx.fill();
+  });
+}
+function drawCell(){
+  const cx=GAMEWIDTH/2,cy=cellYPos();
+  cellPulse+=0.03;const pulse=Math.sin(cellPulse)*3;
+  ctx.save();
+  const rX=80+pulse*1.2,rY=65+pulse;
+  ctx.beginPath();ctx.ellipse(cx,cy,rX,rY,0.1,0,Math.PI*2);
+  const mem=ctx.createLinearGradient(cx-rX,cy-rY,cx+rX,cy+rY);
+  mem.addColorStop(0,'rgba(125,211,252,0.4)');
+  mem.addColorStop(1,'rgba(37,99,235,0.95)');
+  ctx.fillStyle=mem;ctx.fill();
+  ctx.lineWidth=3;ctx.strokeStyle='rgba(15,23,42,0.9)';ctx.stroke();
+  ctx.beginPath();ctx.ellipse(cx,cy,rX-10,rY-10,0.1,0,Math.PI*2);
+  const cyt=ctx.createRadialGradient(cx,cy,10,cx,cy,rY);
+  cyt.addColorStop(0,'rgba(241,245,249,0.95)');
+  cyt.addColorStop(1,'rgba(59,130,246,0.15)');
+  ctx.fillStyle=cyt;ctx.fill();
+  ctx.beginPath();ctx.arc(cx-20,cy-8,20,0,Math.PI*2);
+  ctx.fillStyle='rgba(191,219,254,0.95)';ctx.fill();
+  ctx.lineWidth=2;ctx.strokeStyle='rgba(30,64,175,0.9)';ctx.stroke();
+  ctx.beginPath();ctx.arc(cx-16,cy-10,9,0,Math.PI*2);
+  ctx.fillStyle='rgba(30,64,175,0.98)';ctx.fill();
+
+  const badgeW=90,badgeH=34,bx=cx-badgeW/2,by=cy+4;
+  ctx.save();
+  ctx.shadowColor='rgba(37,99,235,0.9)';ctx.shadowBlur=14;
+  ctx.fillStyle='rgba(15,23,42,0.96)';
+  if(ctx.roundRect)ctx.roundRect(bx,by,badgeW,badgeH,10);else ctx.rect(bx,by,badgeW,badgeH);
+  ctx.fill();ctx.shadowBlur=0;
+  ctx.strokeStyle='rgba(191,219,254,0.95)';ctx.lineWidth=2;ctx.stroke();
+  if(eloraLogoImg.complete && eloraLogoImg.naturalWidth>0){
+    const pad=5,lw=badgeW-pad*2,lh=badgeH-pad*2;
+    ctx.drawImage(eloraLogoImg,bx+pad,by+pad,lw,lh);
+  }else{
+    ctx.fillStyle='#eff6ff';ctx.font='bold 14px Segoe UI, sans-serif';
+    ctx.textBaseline='middle';ctx.textAlign='center';
+    ctx.fillText('ELORA',cx,by+badgeH/2-4);
+    ctx.font='8px Segoe UI, sans-serif';
+    ctx.fillText('THERAPEUTICS',cx,by+badgeH/2+7);
+  }
+  ctx.restore();
+
+  const ringR=Math.max(rX,rY)+10,ha=(health/100)*Math.PI*2;
+  ctx.beginPath();ctx.arc(cx,cy,ringR,-Math.PI/2,-Math.PI/2+ha);
+  ctx.strokeStyle=health>50?'#4ecdc4':health>25?'#ffa502':'#ff4757';
+  ctx.lineWidth=4;ctx.stroke();
+  ctx.restore();
+}
+function drawMicroplastic(mp){
+  ctx.save();
+  ctx.translate(mp.x,mp.y);
+  mp.rotation+=mp.rotSpeed;
+  ctx.rotate(mp.rotation);
+
+  if(mp.kind==='aquafina'||mp.kind==='starbucks'){
+    const img=mp.kind==='aquafina'?aquafinaImg:starbucksImg;
+    const base=mp.size,haloR=base*2.2;
+    const halo=ctx.createRadialGradient(0,0,0,0,0,haloR);
+    if(mp.kind==='aquafina'){
+      halo.addColorStop(0,'rgba(56,189,248,0.7)');
+      halo.addColorStop(1,'rgba(15,23,42,0)');
+    }else{
+      halo.addColorStop(0,'rgba(34,197,94,0.7)');
+      halo.addColorStop(1,'rgba(15,23,42,0)');
+    }
+    ctx.fillStyle=halo;ctx.beginPath();ctx.arc(0,0,haloR,0,Math.PI*2);ctx.fill();
+    if(img.complete && img.naturalWidth>0){
+      const aspect=img.naturalHeight/img.naturalWidth;
+      const scale=mp.kind==='starbucks'?4:2;
+      const w=base*scale,h=w*aspect;
+      ctx.drawImage(img,-w/2,-h/2,w,h);
+    }else{
+      ctx.fillStyle='#ffffff';ctx.fillRect(-base,-base,base*2,base*2);
+    }
+    ctx.font='bold 11px Segoe UI, sans-serif';
+    ctx.textAlign='center';ctx.textBaseline='top';
+    ctx.fillStyle='#e5f4ff';
+    ctx.shadowColor='rgba(15,23,42,0.9)';ctx.shadowBlur=4;
+    ctx.fillText(mp.name,0,base*2.1);
+    ctx.shadowBlur=0;
+    ctx.restore();
+    return;
+  }
+
+  const glow=ctx.createRadialGradient(0,0,0,0,0,mp.size*1.5);
+  glow.addColorStop(0,mp.color+'80');glow.addColorStop(1,'transparent');
+  ctx.fillStyle=glow;ctx.fillRect(-mp.size*2,-mp.size*2,mp.size*4,mp.size*4);
+  ctx.fillStyle=mp.color;ctx.strokeStyle=mp.color;ctx.lineWidth=2;
+  if(mp.shape==='jagged'){
+    ctx.beginPath();
+    for(let i=0;i<7;i++){
+      const a=(i/7)*Math.PI*2,r=mp.size*(0.6+Math.random()*0.4);
+      ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r);
+    }
+    ctx.closePath();ctx.fill();
+  }else if(mp.shape==='foam'){
+    for(let i=0;i<5;i++){
+      ctx.beginPath();
+      ctx.arc((Math.random()-0.5)*mp.size,(Math.random()-0.5)*mp.size,mp.size*0.4,0,Math.PI*2);
+      ctx.fill();
+    }
+  }else if(mp.shape==='circle'){
+    ctx.beginPath();ctx.arc(0,0,mp.size/2,0,Math.PI*2);ctx.fill();
+  }else if(mp.shape==='block'){
+    ctx.fillRect(-mp.size/2,-mp.size/2,mp.size,mp.size);
+  }
+  const label=mp.short||'MP';
+  ctx.font='bold 11px Segoe UI, sans-serif';
+  ctx.textAlign='center';ctx.textBaseline='top';
+  ctx.fillStyle='#e5f4ff';
+  ctx.shadowColor='rgba(15,23,42,0.9)';ctx.shadowBlur=4;
+  ctx.fillText(label,0,mp.size*1.1);
+  ctx.shadowBlur=0;
+  ctx.restore();
+}
+function drawEnzyme(e){
+  ctx.save();ctx.translate(e.x,e.y);
+  if(e.style==='marc'){
+    ctx.beginPath();ctx.arc(0,0,e.size+6,0,Math.PI*2);
+    ctx.strokeStyle='rgba(34,211,238,0.6)';ctx.lineWidth=3;ctx.stroke();
+    ctx.beginPath();ctx.arc(0,0,e.size,0,Math.PI*2);
+    ctx.fillStyle=e.color;ctx.fill();
+  }else if(e.style==='paul'){
+    const grad=ctx.createLinearGradient(-e.size/2,0,e.size,0);
+    grad.addColorStop(0,'rgba(16,185,129,0)');
+    grad.addColorStop(1,e.color);
+    ctx.fillStyle=grad;
+    ctx.beginPath();
+    ctx.ellipse(0,0,e.size*2.2,e.size*0.7,0,0,Math.PI*2);
+    ctx.fill();
+    ctx.beginPath();ctx.arc(0,0,e.size*0.7,0,Math.PI*2);
+    ctx.fillStyle='#ecfdf5';ctx.fill();
+  }else{
+    ctx.beginPath();ctx.arc(0,0,e.size+4,0,Math.PI*2);
+    ctx.fillStyle=e.color+'30';ctx.fill();
+    ctx.beginPath();ctx.arc(0,0,e.size,0,Math.PI*2);
+    ctx.fillStyle=e.color;ctx.fill();
+    ctx.beginPath();ctx.arc(0,0,e.size*0.5,0,Math.PI*2);
+    ctx.fillStyle='#ffffff';ctx.fill();
+  }
+  ctx.restore();
+}
+function drawPowerUp(p){
+  ctx.save();ctx.translate(p.x,p.y);
+  p.bobPhase+=0.05;const bob=Math.sin(p.bobPhase)*5;
+
+  if(p.type==='marc' && marcImg.complete){
+    const s=128;
+    const w=s*1.2;
+    const h=s;
+    ctx.save();
+    ctx.shadowColor='rgba(34,211,238,0.9)';
+    ctx.shadowBlur=20;
+    ctx.drawImage(marcImg,-w/2,bob-h/2,w,h);
+    ctx.restore();
+
+    // label style identical to enemy short labels
+    ctx.font='bold 11px Segoe UI, sans-serif';
+    ctx.textAlign='center';
+    ctx.textBaseline='top';
+    ctx.fillStyle='#e5f4ff';
+    ctx.shadowColor='rgba(15,23,42,0.9)';
+    ctx.shadowBlur=4;
+    ctx.fillText('MARC POWERUP!',0,bob+h/2+6);
+    ctx.shadowBlur=0;
+
+  }else if(p.type==='paul' && paulImg.complete){
+    const s=128;
+    ctx.save();
+    ctx.shadowColor='rgba(34,197,94,0.9)';
+    ctx.shadowBlur=20;
+    ctx.drawImage(paulImg,-s/2,bob-s/2,s,s);
+    ctx.restore();
+
+    ctx.font='bold 11px Segoe UI, sans-serif';
+    ctx.textAlign='center';
+    ctx.textBaseline='top';
+    ctx.fillStyle='#e5f4ff';
+    ctx.shadowColor='rgba(15,23,42,0.9)';
+    ctx.shadowBlur=4;
+    ctx.fillText('PAUL POWERUP!',0,bob+s/2+6);
+    ctx.shadowBlur=0;
+
+  }else{
+    ctx.beginPath();ctx.arc(0,bob,18,0,Math.PI*2);
+    ctx.fillStyle=p.color+'20';ctx.fill();
+    ctx.strokeStyle=p.color;ctx.lineWidth=2;ctx.stroke();
+    ctx.font='20px serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillStyle=p.color;ctx.fillText(p.emoji,0,bob);
+    ctx.font='9px monospace';ctx.fillStyle='#cbd5f5';ctx.textAlign='center';
+    ctx.fillText(p.name,0,bob+40);
+  }
+  ctx.restore();
+}
+function drawEffect(e){
+  ctx.save();ctx.translate(e.x,e.y);ctx.globalAlpha=e.alpha;
+  if(e.type==='explosion'){
+    ctx.beginPath();ctx.arc(0,0,e.radius,0,Math.PI*2);
+    ctx.strokeStyle=e.color;ctx.lineWidth=2;ctx.stroke();
+  }else if(e.type==='text'){
+    ctx.font='bold 18px Segoe UI, sans-serif';
+    ctx.fillStyle=e.color;ctx.textAlign='center';
+    ctx.fillText(e.text,0,0);
+  }else if(e.type==='sparkle'){
+    for(let i=0;i<14;i++){
+      const a=(i/14)*Math.PI*2,d=e.radius*0.7;
+      ctx.beginPath();
+      ctx.arc(Math.cos(a)*d,Math.sin(a)*d,2.2,0,Math.PI*2);
+      ctx.fillStyle=e.color;ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+
+/* spawning */
+function addEntranceText(kind){
+  let msg,color;
+  if(kind==='aquafina'){msg='Bottled Water PET hitting the bloodstream';color='#38bdf8';}
+  else{msg='Coffee Cup microplastic entering circulation';color='#22c55e';}
+  effects.push({
+    x:GAMEWIDTH/2,y:GAMEHEIGHT*0.15,
+    type:'text',subtype:'entry',
+    text:msg,color,alpha:1.5,radius:0,life:240
+  });
+}
+function spawnMicroplastic(){
+  const r=Math.random();let type;
+  if(r<0.4)type=MPTYPES[3];else if(r<0.6)type=MPTYPES[2];else if(r<0.75)type=MPTYPES[1];else type=MPTYPES[0];
+  const side=Math.floor(Math.random()*3);let x,y;
+  const tx=GAMEWIDTH/2+(Math.random()-0.5)*100,ty=cellYPos();
+  if(side===0){x=Math.random()*GAMEWIDTH;y=-20;}
+  else if(side===1){x=-20;y=Math.random()*GAMEHEIGHT*0.5;}
+  else{x=GAMEWIDTH+20;y=Math.random()*GAMEHEIGHT*0.5;}
+  const ang=Math.atan2(ty-y,tx-x);
+  const speed=type.speed+level*0.1+(Math.random()*0.3-0.15);
+  microplastics.push({
+    x,y,vx:Math.cos(ang)*speed,vy:Math.sin(ang)*speed,
+    size:type.size,hp:type.hp+Math.floor(level/4),maxHp:type.hp+Math.floor(level/4),
+    color:type.color,shape:type.shape,name:type.name,short:type.short,
+    points:type.points,rotation:Math.random()*Math.PI*2,
+    rotSpeed:Math.random()*0.06-0.03,kind:'plastic'
+  });
+}
+function spawnBrandedEnemy(){
+  const isAquafina=Math.random()<0.5;
+  const x=Math.random()*GAMEWIDTH-160+80,y=-60;
+  const tx=GAMEWIDTH/2,ty=cellYPos();
+  const ang=Math.atan2(ty-y,tx-x);
+  const speed=0.7+level*0.08;
+  const kind=isAquafina?'aquafina':'starbucks';
+  microplastics.push({
+    x,y,vx:Math.cos(ang)*speed,vy:Math.sin(ang)*speed,
+    size:isAquafina?23:20,hp:1,maxHp:1,color:'#ffffff',
+    shape:'image',name:isAquafina?'Bottled Water':'Coffee Cup',
+    short:isAquafina?'AQUA':'SBX',points:120,
+    rotation:Math.random()*Math.PI*2,rotSpeed:Math.random()*0.08-0.04,kind
+  });
+  addEntranceText(kind);
+}
+function spawnPowerUp(){
+  const roll=Math.random();let p;
+  if(roll<0.35){
+    p={x:Math.random()*GAMEWIDTH-160+80,y:-60,vy:0.7,bobPhase:Math.random()*Math.PI*2,
+       name:'Marc x10',type:'marc',...MARCPOWERUP};
+  }else if(roll<0.7){
+    p={x:Math.random()*GAMEWIDTH-160+80,y:-60,vy:0.7,bobPhase:Math.random()*Math.PI*2,
+       name:'Paul x10',type:'paul',...PAULPOWERUP};
+  }else{
+    const t=POWERUPTYPES[Math.floor(Math.random()*POWERUPTYPES.length)];
+    p={x:Math.random()*GAMEWIDTH-120+60,y:-40,vy:0.7,bobPhase:Math.random()*Math.PI*2,
+       name:t.name,type:'standard',...t};
+  }
+  powerUps.push(p);
+}
+
+/* firing */
+function fireEnzyme(tx,ty){
+  const sx=GAMEWIDTH/2,sy=cellYPos();
+  const ang=Math.atan2(ty-sy,tx-sx), speed=9;
+  if(enzymeType==='marc'){
+    playSound('shoot-marc');
+    const streams=7,spread=0.4;
+    for(let i=0;i<streams;i++){
+      const t=i/(streams-1),a=ang-spread/2+spread*t;
+      enzymes.push({x:sx,y:sy,vx:Math.cos(a)*speed*1.3,vy:Math.sin(a)*speed*1.3,
+                    size:7,color:'#22d3ee',damage:enzymePower*10,style:'marc'});
+    }
+    return;
+  }
+  if(enzymeType==='paul'){
+    playSound('shoot-paul');
+    const streams=5,spread=0.6;
+    for(let i=0;i<streams;i++){
+      const t=i/(streams-1),a=ang-spread/2+spread*t;
+      enzymes.push({x:sx,y:sy,vx:Math.cos(a)*speed*1.15,vy:Math.sin(a)*speed*1.15,
+                    size:8,color:'#22c55e',damage:enzymePower*10,style:'paul'});
+    }
+    return;
+  }
+  playSound('shoot');
+  if(enzymeType==='rapid'){
+    const streams=3;
+    for(let i=-1;i<=1;i++){
+      const a=ang+i*0.15;
+      enzymes.push({x:sx,y:sy,vx:Math.cos(a)*speed*1.3,vy:Math.sin(a)*speed*1.3,
+                    size:5,color:'#00e5ff',damage:enzymePower*0.6,style:'standard'});
+    }
+    return;
+  }
+  let color='#00e5ff',size=6,damage=enzymePower*0.5;
+  if(enzymeType==='power'){color='#ffd32a';size=9;damage=enzymePower*2;}
+  else if(enzymeType==='blast'){color='#a29bfe';size=11;damage=enzymePower*3;}
+  enzymes.push({x:sx,y:sy,vx:Math.cos(ang)*speed,vy:Math.sin(ang)*speed,size,color,damage,style:'standard'});
+}
+
+/* HUD counters */
+function updateKillBoard(){
+  document.getElementById('kill-PET').textContent=killCounts.PET;
+  document.getElementById('kill-PS').textContent=killCounts.PS;
+  document.getElementById('kill-PE').textContent=killCounts.PE;
+  document.getElementById('kill-PP').textContent=killCounts.PP;
+  document.getElementById('kill-WATER').textContent=killCounts.WATER;
+  document.getElementById('kill-COFFEE').textContent=killCounts.COFFEE;
+}
+function updateActivationPanel(){
+  const total=
+    powerupActivations.MARC+
+    powerupActivations.PAUL+
+    powerupActivations.FAST+
+    powerupActivations.BOOST+
+    powerupActivations.HEAL+
+    powerupActivations.BLAST;
+  const _ea=document.getElementById('elora-activations');if(_ea)_ea.textContent=total;
+  document.getElementById('act-MARC').textContent=powerupActivations.MARC;
+  document.getElementById('act-PAUL').textContent=powerupActivations.PAUL;
+  document.getElementById('act-FAST').textContent=powerupActivations.FAST;
+  document.getElementById('act-BOOST').textContent=powerupActivations.BOOST;
+  document.getElementById('act-HEAL').textContent=powerupActivations.HEAL;
+  document.getElementById('act-BLAST').textContent=powerupActivations.BLAST;
+}
+
+/* powerup timer */
+function startPowerupTimerDisplay(name){
+  const el=document.getElementById('powerup-timer');
+  el.style.display='block';
+  function update(){
+    if(!activePowerup){
+      el.style.display='none';
+      clearInterval(powerupTimerInterval);powerupTimerInterval=null;
+      return;
+    }
+    const remaining=Math.max(0,powerupEndTime-performance.now());
+    el.textContent=`${name} ${(remaining/1000).toFixed(1)}s`;
+    if(remaining<=0){
+      el.style.display='none';
+      clearInterval(powerupTimerInterval);powerupTimerInterval=null;
+    }
+  }
+  if(powerupTimerInterval)clearInterval(powerupTimerInterval);
+  update();
+  powerupTimerInterval=setInterval(update,100);
+}
+function stopPowerupTimerDisplay(){
+  const el=document.getElementById('powerup-timer');
+  el.style.display='none';
+  if(powerupTimerInterval)clearInterval(powerupTimerInterval);
+  powerupTimerInterval=null;
+}
+
+/* powerup effects */
+function clearCofounderPower(){
+  if(activePowerup==='marc'||activePowerup==='paul'){
+    activePowerup=null;
+    enzymeType='standard';enzymePower=1;
+    document.getElementById('hud-enzyme').textContent='Std';
+    document.getElementById('powerup-banner').style.display='none';
+    stopAllPowerupVoices();currentCoFounder=null;
+    stopPowerupTimerDisplay();
+    applyAudioState();
+  }
+}
+function activatePowerUp(p){
+  const banner=document.getElementById('powerup-banner');
+  if(activePowerup && p.effect!=='heal')return;
+  banner.style.display='block';
+  banner.textContent=p.name+'!';
+  if(p.effect==='heal'){
+    health=Math.min(100,health+35);
+    killCounts.HEAL++;powerupActivations.HEAL++;
+    updateKillBoard();updateActivationPanel();
+    return;
+  }
+  activePowerup=p.effect;
+  powerupEndTime=performance.now()+POWERUPDURATIONMS;
+  startPowerupTimerDisplay(p.name);
+  if(p.effect==='marc'||p.effect==='paul'){
+    enzymeType=p.effect;enzymePower=10;
+    if(p.effect==='marc')powerupActivations.MARC++;
+    else powerupActivations.PAUL++;
+    updateActivationPanel();
+    document.getElementById('hud-enzyme').textContent=(p.effect==='marc'?'Marc x10':'Paul x10');
+    effects.push({
+      x:GAMEWIDTH/2,y:cellYPos()-60,
+      type:'text',subtype:'power',
+      text:p.effect==='marc'?'Marc Power Unleashed!':'Paul Power Unleashed!',
+      color:p.effect==='marc'?'#38bdf8':'#22c55e',
+      alpha:1.8,radius:0
+    });
+    if(p.effect==='marc')playMarcVoice();else playPaulVoice();
+    setTimeout(()=>{if(activePowerup===p.effect)clearCofounderPower();},POWERUPDURATIONMS);
+    return;
+  }
+  if(p.key==='FAST'){killCounts.FAST++;powerupActivations.FAST++;}
+  if(p.key==='BOOST'){killCounts.BOOST++;powerupActivations.BOOST++;}
+  if(p.key==='BLAST'){killCounts.BLAST++;powerupActivations.BLAST++;}
+  updateKillBoard();updateActivationPanel();
+  enzymeType=p.effect;enzymePower=1;
+  document.getElementById('hud-enzyme').textContent=p.name;
+  setTimeout(()=>{
+    if(activePowerup===p.effect){
+      enzymeType='standard';enzymePower=1;
+      document.getElementById('hud-enzyme').textContent='Std';
+      banner.style.display='none';
+      activePowerup=null;
+      stopPowerupTimerDisplay();
+    }
+  },POWERUPDURATIONMS);
+}
+
+/* collisions */
+function checkCollisions(){
+  const cx=GAMEWIDTH/2,cy=cellYPos();
+  for(let i=enzymes.length-1;i>=0;i--){
+    let handled=false;
+    for(let j=microplastics.length-1;j>=0;j--){
+      const e=enzymes[i],m=microplastics[j];
+      if(!e||!m)continue;
+
+      if(m.y < HUD_SAFE_Y) continue;
+
+      if(Math.hypot(e.x-m.x,e.y-m.y)<m.size+e.size){
+        m.hp-=e.damage;
+        enzymes.splice(i,1);handled=true;
+        effects.push({x:m.x,y:m.y,type:'sparkle',color:e.color,alpha:1,radius:22});
+        if(m.hp<=0){
+          score+=m.points*level;
+          if(m.kind==='aquafina')killCounts.WATER++;
+          else if(m.kind==='starbucks')killCounts.COFFEE++;
+          if(m.kind==='plastic' && m.short && killCounts[m.short]!==undefined)killCounts[m.short]++;
+          updateKillBoard();
+          effects.push({x:m.x,y:m.y,type:'explosion',color:m.color,alpha:1,radius:5});
+          effects.push({
+            x:m.x,y:m.y-20,
+            type:'text',subtype:'score',
+            color:'#4ecdc4',
+            text:String(m.points*level),
+            alpha:1.4,radius:0
+          });
+          microplastics.splice(j,1);
+        }
+        break;
+      }
+    }
+    if(handled)continue;
+    for(let k=powerUps.length-1;k>=0;k--){
+      const e=enzymes[i],p=powerUps[k];
+      if(!e||!p)continue;
+
+      if(p.y < HUD_SAFE_Y) continue;
+
+      const d=Math.hypot(e.x-p.x,e.y-p.y);
+      const r=(p.type==='marc'||p.type==='paul')?64:18;
+      if(d<r+e.size){
+        activatePowerUp(p);powerUps.splice(k,1);
+        effects.push({x:p.x,y:p.y,type:'sparkle',color:p.color,alpha:1,radius:32});
+        enzymes.splice(i,1);break;
+      }
+    }
+  }
+  for(let i=microplastics.length-1;i>=0;i--){
+    const m=microplastics[i];
+    if(Math.hypot(m.x-cx,m.y-cy)<40+m.size){
+      health-=5+level*0.7;
+      effects.push({x:m.x,y:m.y,type:'explosion',color:'#ff4757',alpha:1,radius:5});
+      microplastics.splice(i,1);
+      if(health<=0){health=0;gameOver();}
+    }
+  }
+  for(let i=powerUps.length-1;i>=0;i--){
+    const p=powerUps[i];
+    const r=(p.type==='marc'||p.type==='paul')?64:18;
+    if(Math.hypot(p.x-cx,p.y-cy)<40+r){
+      activatePowerUp(p);powerUps.splice(i,1);
+    }
+  }
+}
+
+/* rotating insight messages */
+let hudMessageTimer=null;
+function startHudMessages(){
+  const el=document.getElementById('insight-text');if(!el)return;
+  function setMsg(){
+    const i=Math.floor(Math.random()*ROUNDMESSAGES.length);
+    el.textContent=ROUNDMESSAGES[i];
+  }
+  setMsg();
+  if(hudMessageTimer)clearInterval(hudMessageTimer);
+  hudMessageTimer=setInterval(()=>{
+    if(gameRunning && !gamePaused) setMsg();
+  },8000);
+}
+function stopHudMessages(){
+  if(hudMessageTimer)clearInterval(hudMessageTimer);
+  hudMessageTimer=null;
+}
+
+/* leaderboard */
+/* ── Firebase Realtime Database leaderboard ── */
+const FIREBASE_LB_URL='https://microplastic-blaster-default-rtdb.firebaseio.com/leaderboard.json';
+
+async function getLeaderboard(){
+  try{
+    const res=await fetch(FIREBASE_LB_URL);
+    const data=await res.json();
+    if(!data) return [];
+    if(Array.isArray(data)) return data.filter(Boolean);
+    return Object.values(data).filter(Boolean);
+  }catch(e){return [];}
+}
+async function saveLeaderboard(lb){
+  try{
+    await fetch(FIREBASE_LB_URL,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(lb)});
+  }catch(e){}
+}
+async function addScoreToLeaderboard(score,level,name){
+  const lb=await getLeaderboard();
+  lb.push({name:name||'Anonymous',score,level,date:new Date().toISOString().slice(0,10)});
+  lb.sort((a,b)=>b.score-a.score);
+  const trimmed=lb.slice(0,5);
+  await saveLeaderboard(trimmed);
+  return trimmed;
+}
+async function renderLeaderboard(id){
+  const el=document.getElementById(id);if(!el)return;
+  el.innerHTML='<span style="font-size:0.8em;color:#a0a0d0">Loading leaderboard…</span>';
+  const lb=await getLeaderboard();
+  if(!lb.length){
+    el.innerHTML='<strong>Leaderboard</strong><br><span style="font-size:0.8em;color:#a0a0d0">No scores yet – be the first to set a record.</span>';
+    return;
+  }
+  let html='<strong>Leaderboard</strong><br><table style="width:100%;margin-top:6px;font-size:0.8em;color:#c0c0e0;border-collapse:collapse">';
+  html+='<tr><th style="text-align:left;padding:2px 0">Rank</th><th style="text-align:left;padding:2px 0">Name</th><th style="text-align:right;padding:2px 0">Score</th><th style="text-align:right;padding:2px 0">Level</th><th style="text-align:right;padding:2px 0">Date</th></tr>';
+  lb.forEach((e,i)=>{
+    html+=`<tr><td style="padding:2px 0">${i+1}</td><td style="padding:2px 0">${e.name||'—'}</td><td style="text-align:right;padding:2px 0">${e.score}</td><td style="text-align:right;padding:2px 0">${e.level}</td><td style="text-align:right;padding:2px 0">${e.date}</td></tr>`;
+  });
+  html+='</table>';el.innerHTML=html;
+}
+async function toggleLeaderboardPanel(){
+  const panel=document.getElementById('start-leaderboard');
+  if(panel.style.display==='none' || !panel.style.display){
+    panel.style.display='block';
+    await renderLeaderboard('start-leaderboard');
+  }else panel.style.display='none';
+}
+
+/* game loop */
+function updateGame(){
+  if(!gameRunning||gamePaused)return;
+  spawnTimer++;
+  if(spawnTimer>Math.max(35,80-level*4)){
+    spawnMicroplastic();spawnTimer=0;
+    if(Math.random()<0.35)spawnBrandedEnemy();
+  }
+  powerUpTimer++;if(powerUpTimer>220){spawnPowerUp();powerUpTimer=0;}
+  difficultyTimer++;if(difficultyTimer>720){level++;difficultyTimer=0;}
+
+  microplastics.forEach(m=>{m.x+=m.vx;m.y+=m.vy;});
+  enzymes.forEach(e=>{e.x+=e.vx;e.y+=e.vy;});
+  powerUps.forEach(p=>{p.y+=p.vy;});
+  effects.forEach(e=>{
+    if(e.type==='text' && e.subtype==='entry'){
+      e.y+=0.4;
+      if(e.life!==undefined){e.life--;if(e.life<60)e.alpha=e.life/60;}
+    }else if(e.type==='text'){e.y-=0.7;e.alpha-=0.02;}
+    else{e.alpha-=0.02;e.radius+=1.2;}
+  });
+
+  enzymes=enzymes.filter(e=>e.x>-20&&e.x<GAMEWIDTH+20&&e.y>-20&&e.y<GAMEHEIGHT+20);
+  microplastics=microplastics.filter(m=>m.y<GAMEHEIGHT+50);
+  powerUps=powerUps.filter(p=>p.y<GAMEHEIGHT+80);
+  effects=effects.filter(e=>e.alpha>0 && (e.life===undefined || e.life>0));
+
+  checkCollisions();
+
+  if(activePowerup && performance.now()>powerupEndTime){
+    if(activePowerup==='marc'||activePowerup==='paul')clearCofounderPower();
+    else{
+      enzymeType='standard';enzymePower=1;
+      document.getElementById('hud-enzyme').textContent='Std';
+      document.getElementById('powerup-banner').style.display='none';
+      stopPowerupTimerDisplay();
+      activePowerup=null;
+    }
+  }
+
+  const hp=Math.max(0,Math.round(health));
+  document.getElementById('hud-score').textContent=score;
+  document.getElementById('hud-level').textContent=level;
+  document.getElementById('hud-health').textContent=hp;
+}
+function render(){
+  drawBackground();
+  drawCell();
+  microplastics.forEach(drawMicroplastic);
+  enzymes.forEach(drawEnzyme);
+  powerUps.forEach(drawPowerUp);
+  effects.forEach(drawEffect);
+}
+function gameLoop(){
+  if(!gameRunning||gamePaused)return;
+  updateGame();render();
+  requestAnimationFrame(gameLoop);
+}
+
+/* lifecycle */
+function startGame(){
+  initAudio();
+  score=0;health=100;level=1;
+  enzymeType='standard';enzymePower=1;
+  microplastics=[];powerUps=[];effects=[];enzymes=[];
+  spawnTimer=0;powerUpTimer=0;difficultyTimer=0;
+  for(const k in killCounts)killCounts[k]=0;
+  powerupActivations={MARC:0,PAUL:0,FAST:0,BOOST:0,HEAL:0,BLAST:0};
+  updateKillBoard();updateActivationPanel();
+  document.getElementById('start-screen').style.display='none';
+  document.getElementById('game-over-screen').style.display='none';
+  resizeCanvas();
+  document.getElementById('hud-enzyme').textContent='Std';
+  document.getElementById('hud-health').textContent=100;
+  document.getElementById('powerup-banner').style.display='none';
+  stopAllPowerupVoices();currentCoFounder=null;
+  activePowerup=null;stopPowerupTimerDisplay();
+  gameRunning=true;gamePaused=false;
+  applyAudioState();
+  resizeCanvas();
+  startHudMessages();
+  gameLoop();
+}
+let pendingScore=null,pendingLevel=null;
+async function gameOver(){
+  gameRunning=false;gamePaused=false;
+  applyAudioState();
+  stopHudMessages();
+  
+  document.getElementById('game-over-screen').style.display='block';
+  document.getElementById('final-score').textContent=score;
+  document.getElementById('level-reached').textContent=`Reached Level ${level}`;
+  document.getElementById('round-message').textContent='';
+  clearCofounderPower();activePowerup=null;stopPowerupTimerDisplay();
+  pendingScore=score;pendingLevel=level;
+  const nameEntry=document.getElementById('name-entry');
+  const nameInput=document.getElementById('player-name-input');
+  if(nameEntry){nameEntry.style.display='flex';nameInput.value='';}
+  document.getElementById('leaderboard').innerHTML='';
+}
+async function submitNamedScore(){
+  const nameInput=document.getElementById('player-name-input');
+  const name=(nameInput?nameInput.value.trim():'')||'Anonymous';
+  const nameEntry=document.getElementById('name-entry');
+  if(nameEntry) nameEntry.style.display='none';
+  await addScoreToLeaderboard(pendingScore,pendingLevel,name);
+  await renderLeaderboard('leaderboard');
+  pendingScore=null;pendingLevel=null;
+}
+
+/* input */
+canvas.addEventListener('click',e=>{
+  if(!gameRunning||gamePaused)return;
+  const p=getGameCoords(e.clientX,e.clientY);
+  fireEnzyme(p.x,p.y);
+});
+canvas.addEventListener('touchstart',e=>{
+  if(!gameRunning||gamePaused)return;
+  const t=e.touches[0];
+  const p=getGameCoords(t.clientX,t.clientY);
+  fireEnzyme(p.x,p.y);
+},{passive:true});
+</script>
+</body>
+</html>

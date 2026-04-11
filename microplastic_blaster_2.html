@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MicroPlastic Blaster - Elora Therapeutics</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0a2e;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+        }
+        canvas {
+            border: 2px solid #00e5ff;
+            border-radius: 8px;
+            box-shadow: 0 0 30px rgba(0, 229, 255, 0.3);
+            cursor: crosshair;
+        }
+        #ui-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+        #start-screen, #game-over-screen {
+            background: rgba(10, 10, 46, 0.95);
+            border: 2px solid #00e5ff;
+            border-radius: 16px;
+            padding: 40px;
+            text-align: center;
+            color: white;
+            pointer-events: auto;
+            max-width: 500px;
+        }
+        #game-over-screen { display: none; }
+        h1 {
+            font-size: 2.2em;
+            color: #00e5ff;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(0, 229, 255, 0.5);
+        }
+        .subtitle { color: #a0a0d0; font-size: 0.95em; margin-bottom: 20px; }
+        .narrative { color: #c0c0e0; font-size: 0.9em; margin-bottom: 12px; }
+        .info-text { color: #c0c0e0; font-size: 0.85em; line-height: 1.6; margin: 15px 0; }
+        .btn {
+            background: linear-gradient(135deg, #00e5ff, #00b8d4);
+            color: #0a0a2e;
+            border: none;
+            padding: 14px 40px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border-radius: 30px;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: all 0.3s;
+        }
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.5);
+        }
+        .logo-text {
+            font-size: 0.8em;
+            color: #7070a0;
+            margin-top: 20px;
+        }
+        .logo-text a { color: #00e5ff; text-decoration: none; }
+        #hud {
+            position: absolute;
+            top: 10px; left: 10px; right: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            font-size: 1em;
+            pointer-events: none;
+            padding: 0 20px;
+        }
+        .hud-item {
+            background: rgba(0,0,0,0.5);
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 1px solid rgba(0, 229, 255, 0.3);
+        }
+        /* Subtle Elora branding in HUD corner */
+        #hud-elora {
+            border-color: rgba(0, 229, 255, 0.6);
+            font-size: 0.7em;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+        #hud-elora-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 999px;
+            background: radial-gradient(circle at 30% 30%, #e0f2fe 0, #00e5ff 40%, #007a8a 85%);
+            box-shadow: 0 0 8px rgba(0, 229, 255, 0.9);
+        }
+        #final-score { font-size: 2em; color: #00e5ff; }
+        .fact-box {
+            background: rgba(0, 229, 255, 0.1);
+            border-left: 3px solid #00e5ff;
+            padding: 10px 14px;
+            margin: 10px 0;
+            text-align: left;
+            font-size: 0.8em;
+            color: #c0c0e0;
+            border-radius: 0 8px 8px 0;
+        }
+        .go-elora-tagline {
+            font-size: 0.85em;
+            color: #c0c0e0;
+            margin-top: 10px;
+        }
+        .go-elora-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 8px;
+            padding: 8px 14px;
+            border-radius: 999px;
+            border: 1px solid rgba(0, 229, 255, 0.6);
+            background: rgba(0, 0, 0, 0.3);
+            color: #e0f7ff;
+            font-size: 0.8em;
+            text-decoration: none;
+        }
+        .go-elora-link span.pill {
+            background: linear-gradient(135deg, #00e5ff, #00b8d4);
+            color: #00111a;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 0.7em;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+        }
+        .go-elora-link:hover {
+            box-shadow: 0 0 16px rgba(0, 229, 255, 0.4);
+        }
+        @media (max-width: 700px) {
+            #hud {
+                flex-wrap: wrap;
+                row-gap: 6px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <div id="ui-overlay">
+        <div id="start-screen">
+            <h1>🧬 MicroPlastic Blaster</h1>
+            <p class="subtitle">Deploy Enzymes. Destroy Microplastics. Save the Body.</p>
+            <!-- New one-sentence narrative -->
+            <p class="narrative">
+                You’re the body’s enzyme defense, stopping harmful microplastics before they damage cells.
+            </p>
+            <div class="fact-box">
+                <strong>Did you know?</strong> Humans ingest ~5 grams of microplastic per week —
+                roughly the weight of a credit card. Elora Therapeutics is developing
+                the first FDA-targeted enzyme therapy to remove them.
+            </div>
+            <p class="info-text">
+                🎯 <strong>Click</strong> to launch enzyme blasts at microplastic particles<br>
+                🛡️ <strong>Protect</strong> the cell from incoming microplastics<br>
+                ⚡ <strong>Collect</strong> power-ups to boost your enzyme potency<br>
+                🏆 <strong>Survive</strong> as long as you can and set a high score!
+            </p>
+            <button class="btn" onclick="startGame()">Launch Enzymes! 🚀</button>
+            <p class="logo-text">
+                A game by <a href="https://www.eloratherapeutics.com" target="_blank">Elora Therapeutics</a><br>
+                First-in-class enzyme therapy to remove microplastics from humans
+            </p>
+        </div>
+        <div id="game-over-screen">
+            <h1>⚠️ Cell Overwhelmed!</h1>
+            <p class="subtitle">The microplastics broke through your enzyme defense</p>
+            <p id="final-score">0</p>
+            <p style="color:#a0a0d0;">Microplastics Destroyed</p>
+            <div id="level-reached" style="color:#4ecdc4; margin:8px 0;"></div>
+            <div class="fact-box" id="end-fact"></div>
+            <div id="leaderboard" style="margin-top:15px; text-align:left;"></div>
+
+            <!-- New Elora branding + prominent link on game-over screen -->
+            <div class="go-elora-tagline">
+                Elora Therapeutics – First-in-class enzyme therapy to remove microplastics from humans.
+            </div>
+            <a class="go-elora-link" href="https://eloratherapeutics.com" target="_blank" rel="noopener noreferrer">
+                <span class="pill">Learn more</span>
+                <span>Help make this therapy real at eloratherapeutics.com</span>
+            </a>
+
+            <button class="btn" onclick="startGame()">Try Again 🔬</button>
+        </div>
+    </div>
+    <div id="hud" style="display:none;">
+        <span class="hud-item" id="hud-score">🎯 Score: 0</span>
+        <span class="hud-item" id="hud-level">🧪 Level: 1</span>
+        <span class="hud-item" id="hud-health">❤️ Cell Health: 100%</span>
+        <span class="hud-item" id="hud-enzyme">⚡ Enzyme: Standard</span>
+        <span class="hud-item" id="hud-mute"
+              style="pointer-events:auto; cursor:pointer;"
+              onclick="toggleMute()">🔊</span>
+        <!-- Subtle Elora HUD branding, right side -->
+        <span class="hud-item" id="hud-elora">
+            <span id="hud-elora-dot"></span>
+            <span>Elora Therapeutics · First-in-class enzyme therapy to remove microplastics from humans</span>
+        </span>
+    </div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas() {
+    const maxW = Math.min(window.innerWidth - 20, 800);
+    const maxH = Math.min(window.innerHeight - 20, 600);
+    canvas.width = maxW;
+    canvas.height = maxH;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+let gameRunning = false, score = 0, health = 100, level = 1;
+let enzymeType = 'standard', enzymePower = 1;
+let particles = [], enzymes = [], powerUps = [], effects = [], microplastics = [];
+let spawnTimer = 0, powerUpTimer = 0, difficultyTimer = 0, cellPulse = 0;
+let backgroundStars = [];
+
+const MP_TYPES = [
+    { name:'PET Fragment', color:'#ff4757', size:18, speed:1, hp:1, points:10, shape:'jagged' },
+    { name:'Polystyrene', color:'#ffa502', size:22, speed:0.7, hp:2, points:20, shape:'foam' },
+    { name:'Microfiber', color:'#ff6b81', size:12, speed:1.5, hp:1, points:15, shape:'fiber' },
+    { name:'Microbead', color:'#7bed9f', size:10, speed:1.2, hp:1, points:10, shape:'circle' },
+    { name:'PVC Chunk', color:'#cf6a87', size:25, speed:0.5, hp:3, points:30, shape:'block' },
+    { name:'Nanoplastic', color:'#a29bfe', size:7, speed:2, hp:1, points:25, shape:'circle' },
+];
+
+const FACTS = [
+    "Microplastics have been found in human blood, lungs, and placenta.",
+    "The average person ingests about 5 grams of plastic per week.",
+    "Over 10,000 chemicals are used in plastic production, many toxic.",
+    "Microplastics can cross the blood-brain barrier.",
+    "Plastic particles have been found in 80% of tested human blood samples.",
+    "Enzyme therapy could break down microplastics into harmless molecules.",
+    "PET-degrading enzymes like PETase can break plastic bonds naturally.",
+    "Elora Therapeutics is pioneering enzyme therapies targeting microplastics.",
+    "Microplastics are linked to inflammation and metabolic dysfunction.",
+    "By 2050, plastic production is expected to triple from 2020 levels.",
+];
+
+const POWERUP_TYPES = [
+    { name:'FAST-PETase', color:'#00e5ff', emoji:'🧬', effect:'rapid', duration:5000 },
+    { name:'Enzyme Boost', color:'#ffd32a', emoji:'⚡', effect:'power', duration:5000 },
+    { name:'Cell Repair', color:'#ff4757', emoji:'❤️', effect:'heal', duration:0 },
+    { name:'Chain Reaction', color:'#a29bfe', emoji:'💥', effect:'blast', duration:3000 },
+];
+
+for (let i = 0; i < 80; i++) {
+    backgroundStars.push({
+        x: Math.random() * 800,
+        y: Math.random() * 600,
+        size: Math.random() * 2,
+        alpha: Math.random() * 0.5 + 0.1,
+        speed: Math.random() * 0.3 + 0.1
+    });
+}
+
+// ============ SOUND SYSTEM ============
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+let muted = false;
+let audioInitialized = false;
+
+// Create/resume audio context in direct response to a user gesture
+function initAudio() {
+    if (audioInitialized) return;
+    audioInitialized = true;
+
+    try {
+        if (!audioCtx) {
+            audioCtx = new AudioCtx();
+        }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+    } catch (e) {
+        console.warn('Audio init failed:', e);
+    }
+}
+
+function toggleMute() {
+    muted = !muted;
+    document.getElementById('hud-mute').textContent = muted ? '🔇' : '🔊';
+    if (audioCtx) {
+        if (muted) audioCtx.suspend();
+        else audioCtx.resume();
+    }
+}
+
+function playSound(type) {
+    if (!audioCtx || muted) return;
+    const now = audioCtx.currentTime;
+
+    if (type === 'shoot') {
+        const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.connect(g); g.connect(audioCtx.destination);
+        o.type = 'sine';
+        o.frequency.setValueAtTime(880, now);
+        o.frequency.exponentialRampToValueAtTime(1760, now + 0.05);
+        o.frequency.exponentialRampToValueAtTime(440, now + 0.1);
+        g.gain.setValueAtTime(0.15, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+        o.start(now); o.stop(now + 0.15);
+    }
+    else if (type === 'hit') {
+        const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.connect(g); g.connect(audioCtx.destination);
+        o.type = 'square';
+        o.frequency.setValueAtTime(300, now);
+        o.frequency.exponentialRampToValueAtTime(80, now + 0.1);
+        g.gain.setValueAtTime(0.12, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+        o.start(now); o.stop(now + 0.12);
+    }
+    else if (type === 'destroy') {
+        const o1 = audioCtx.createOscillator(), o2 = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        o1.connect(g); o2.connect(g); g.connect(audioCtx.destination);
+        o1.type = 'sine';
+        o1.frequency.setValueAtTime(600, now);
+        o1.frequency.exponentialRampToValueAtTime(1200, now + 0.08);
+        o1.frequency.exponentialRampToValueAtTime(200, now + 0.25);
+        o2.type = 'triangle';
+        o2.frequency.setValueAtTime(800, now);
+        o2.frequency.exponentialRampToValueAtTime(100, now + 0.3);
+        g.gain.setValueAtTime(0.15, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+        o1.start(now); o2.start(now); o1.stop(now + 0.3); o2.stop(now + 0.3);
+    }
+    else if (type === 'powerup') {
+        [523,659,784,1047].forEach((freq, i) => {
+            const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+            o.connect(g); g.connect(audioCtx.destination);
+            o.type = 'sine';
+            o.frequency.setValueAtTime(freq, now + i * 0.08);
+            g.gain.setValueAtTime(0, now + i * 0.08);
+            g.gain.linearRampToValueAtTime(0.12, now + i * 0.08 + 0.02);
+            g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.08 + 0.2);
+            o.start(now + i * 0.08); o.stop(now + i * 0.08 + 0.2);
+        });
+    }
+    else if (type === 'damage') {
+        const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        const dist = audioCtx.createWaveShaper();
+        const curve = new Float32Array(256);
+        for (let i = 0; i < 256; i++) {
+            const x = (i * 2) / 256 - 1;
+            curve[i] = (Math.PI + 100) * x / (Math.PI + 100 * Math.abs(x));
+        }
+        dist.curve = curve;
+        o.connect(dist); dist.connect(g); g.connect(audioCtx.destination);
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(150, now);
+        o.frequency.exponentialRampToValueAtTime(40, now + 0.3);
+        g.gain.setValueAtTime(0.2, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+        o.start(now); o.stop(now + 0.35);
+    }
+    else if (type === 'levelup') {
+        [523,659,784,1047,784,1047].forEach((freq, i) => {
+            const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+            o.connect(g); g.connect(audioCtx.destination);
+            o.type = 'triangle';
+            o.frequency.setValueAtTime(freq, now + i * 0.1);
+            g.gain.setValueAtTime(0, now + i * 0.1);
+            g.gain.linearRampToValueAtTime(0.12, now + i * 0.1 + 0.02);
+            g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.1 + 0.15);
+            o.start(now + i * 0.1); o.stop(now + i * 0.1 + 0.15);
+        });
+    }
+    else if (type === 'gameover') {
+        [440,370,311,261,220,185].forEach((freq, i) => {
+            const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+            o.connect(g); g.connect(audioCtx.destination);
+            o.type = 'sawtooth';
+            o.frequency.setValueAtTime(freq, now + i * 0.15);
+            g.gain.setValueAtTime(0, now + i * 0.15);
+            g.gain.linearRampToValueAtTime(0.1, now + i * 0.15 + 0.02);
+            g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.15 + 0.2);
+            o.start(now + i * 0.15); o.stop(now + i * 0.15 + 0.2);
+        });
+    }
+}
+
+// Extra safety: ensure first canvas tap also initializes audio
+canvas.addEventListener('click', () => initAudio(), { once: true });
+canvas.addEventListener('touchstart', () => initAudio(), { once: true });
+
+// ============ DRAWING FUNCTIONS ============
+function drawBackground() {
+    const grad = ctx.createRadialGradient(
+        canvas.width/2, canvas.height/2, 50,
+        canvas.width/2, canvas.height/2, canvas.width/2
+    );
+    grad.addColorStop(0, '#1a1a4e');
+    grad.addColorStop(0.5, '#0f0f3a');
+    grad.addColorStop(1, '#050520');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    backgroundStars.forEach(s => {
+        s.y += s.speed;
+        if (s.y > canvas.height) {
+            s.y = 0;
+            s.x = Math.random() * canvas.width;
+        }
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(100, 100, 200, ${s.alpha})`;
+        ctx.fill();
+    });
+}
+
+function drawCell() {
+    const cx = canvas.width / 2;
+    const cy = canvas.height - 60;
+    cellPulse += 0.03;
+    const pulse = Math.sin(cellPulse) * 5;
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, 45 + pulse, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0, 229, 255, 0.1)';
+    ctx.fill();
+    ctx.strokeStyle = `rgba(0, 229, 255, ${0.3 + Math.sin(cellPulse) * 0.1})`;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, 30 + pulse * 0.5, 0, Math.PI * 2);
+    const cg = ctx.createRadialGradient(cx, cy, 5, cx, cy, 30);
+    cg.addColorStop(0, '#4ecdc4');
+    cg.addColorStop(1, '#00b8d4');
+    ctx.fillStyle = cg;
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, 12, 0, Math.PI * 2);
+    ctx.fillStyle = '#1a1a4e';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(cx, cy, 8, 0, Math.PI * 2);
+    ctx.fillStyle = '#2d2d6e';
+    ctx.fill();
+
+    const ha = (health / 100) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 50 + pulse, -Math.PI / 2, -Math.PI / 2 + ha);
+    ctx.strokeStyle = health > 50 ? '#4ecdc4' : health > 25 ? '#ffa502' : '#ff4757';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+}
+
+function drawMicroplastic(mp) {
+    ctx.save();
+    ctx.translate(mp.x, mp.y);
+    ctx.rotate(mp.rotation);
+
+    const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, mp.size * 1.5);
+    glow.addColorStop(0, mp.color + '80');
+    glow.addColorStop(1, 'transparent');
+    ctx.fillStyle = glow;
+    ctx.fillRect(-mp.size * 2, -mp.size * 2, mp.size * 4, mp.size * 4);
+
+    ctx.fillStyle = mp.color;
+    ctx.strokeStyle = mp.color;
+    ctx.lineWidth = 2;
+
+    if (mp.shape === 'jagged') {
+        ctx.beginPath();
+        for (let i = 0; i < 7; i++) {
+            const a = (i / 7) * Math.PI * 2;
+            const r = mp.size * (0.6 + Math.random() * 0.4);
+            ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+        }
+        ctx.closePath();
+        ctx.fill();
+    } else if (mp.shape === 'foam') {
+        for (let i = 0; i < 5; i++) {
+            ctx.beginPath();
+            ctx.arc(
+                (Math.random() - 0.5) * mp.size,
+                (Math.random() - 0.5) * mp.size,
+                mp.size * 0.4,
+                0, Math.PI * 2
+            );
+            ctx.fill();
+        }
+    } else if (mp.shape === 'fiber') {
+        ctx.beginPath();
+        ctx.moveTo(-mp.size, 0);
+        ctx.quadraticCurveTo(0, mp.size * 0.5, mp.size, 0);
+        ctx.lineWidth = 3;
+        ctx.stroke();
+    } else if (mp.shape === 'block') {
+        ctx.fillRect(-mp.size / 2, -mp.size / 2, mp.size, mp.size);
+    } else {
+        ctx.beginPath();
+        ctx.arc(0, 0, mp.size / 2, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    if (mp.maxHp > 1) {
+        ctx.fillStyle = 'white';
+        ctx.font = '10px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(mp.hp + '/' + mp.maxHp, 0, mp.size + 12);
+    }
+
+    ctx.restore();
+}
+
+function drawEnzyme(e) {
+    ctx.save();
+    ctx.translate(e.x, e.y);
+    ctx.beginPath();
+    ctx.arc(0, 0, e.size + 4, 0, Math.PI * 2);
+    ctx.fillStyle = e.color + '30';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(0, 0, e.size, 0, Math.PI * 2);
+    ctx.fillStyle = e.color;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(0, 0, e.size * 0.5, 0, Math.PI * 2);
+    ctx.fillStyle = 'white';
+    ctx.fill();
+    ctx.restore();
+}
+
+function drawPowerUp(p) {
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    p.bobPhase += 0.05;
+    const bob = Math.sin(p.bobPhase) * 5;
+    ctx.beginPath();
+    ctx.arc(0, bob, 18, 0, Math.PI * 2);
+    ctx.fillStyle = p.color + '20';
+    ctx.fill();
+    ctx.strokeStyle = p.color;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.font = '20px serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(p.emoji, 0, bob);
+    ctx.font = '9px monospace';
+    ctx.fillStyle = p.color;
+    ctx.fillText(p.name, 0, bob + 25);
+    ctx.restore();
+}
+
+function drawEffect(e) {
+    ctx.save();
+    ctx.translate(e.x, e.y);
+    ctx.globalAlpha = e.alpha;
+    if (e.type === 'explosion') {
+        ctx.beginPath();
+        ctx.arc(0, 0, e.radius, 0, Math.PI * 2);
+        ctx.strokeStyle = e.color;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    } else if (e.type === 'text') {
+        ctx.font = 'bold 14px monospace';
+        ctx.fillStyle = e.color;
+        ctx.textAlign = 'center';
+        ctx.fillText(e.text, 0, 0);
+    } else if (e.type === 'sparkle') {
+        for (let i = 0; i < 6; i++) {
+            const a = (i / 6) * Math.PI * 2 + e.radius;
+            const d = e.radius * 3;
+            ctx.beginPath();
+            ctx.arc(Math.cos(a) * d, Math.sin(a) * d, 2, 0, Math.PI * 2);
+            ctx.fillStyle = e.color;
+            ctx.fill();
+        }
+    }
+    ctx.restore();
+}
+
+// ============ GAME LOGIC ============
+function spawnMicroplastic() {
+    const type = MP_TYPES[Math.floor(Math.random() * Math.min(MP_TYPES.length, 2 + level))];
+    const side = Math.floor(Math.random() * 3);
+    let x, y;
+    const targetX = canvas.width / 2 + (Math.random() - 0.5) * 100;
+    const targetY = canvas.height - 60;
+
+    if (side === 0) {
+        x = Math.random() * canvas.width;
+        y = -20;
+    } else if (side === 1) {
+        x = -20;
+        y = Math.random() * canvas.height * 0.5;
+    } else {
+        x = canvas.width + 20;
+        y = Math.random() * canvas.height * 0.5;
+    }
+    const angle = Math.atan2(targetY - y, targetX - x);
+    const speed = type.speed * (0.8 + level * 0.15) * (0.8 + Math.random() * 0.4);
+
+    microplastics.push({
+        x, y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        size: type.size,
+        hp: type.hp + Math.floor(level / 3),
+        maxHp: type.hp + Math.floor(level / 3),
+        color: type.color,
+        shape: type.shape,
+        name: type.name,
+        points: type.points,
+        rotation: Math.random() * Math.PI * 2,
+        rotSpeed: (Math.random() - 0.5) * 0.05
+    });
+}
+
+function spawnPowerUp() {
+    const type = POWERUP_TYPES[Math.floor(Math.random() * POWERUP_TYPES.length)];
+    powerUps.push({
+        x: Math.random() * (canvas.width - 100) + 50,
+        y: -20,
+        vy: 0.8,
+        ...type,
+        bobPhase: Math.random() * Math.PI * 2
+    });
+}
+
+function fireEnzyme(targetX, targetY) {
+    playSound('shoot');
+    const startX = canvas.width / 2;
+    const startY = canvas.height - 60;
+    const angle = Math.atan2(targetY - startY, targetX - startX);
+    const speed = 8;
+
+    let color = '#00e5ff';
+    let size = 5;
+    let damage = enzymePower;
+
+    if (enzymeType === 'rapid') {
+        for (let i = -1; i <= 1; i++) {
+            const a = angle + i * 0.15;
+            enzymes.push({
+                x: startX, y: startY,
+                vx: Math.cos(a) * speed * 1.3,
+                vy: Math.sin(a) * speed * 1.3,
+                size: 4,
+                color: '#00e5ff',
+                damage
+            });
+        }
+        return;
+    }
+    if (enzymeType === 'power') {
+        color = '#ffd32a';
+        size = 8;
+        damage = 3;
+    }
+    if (enzymeType === 'blast') {
+        color = '#a29bfe';
+        size = 10;
+        damage = 5;
+    }
+
+    enzymes.push({
+        x: startX, y: startY,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        size, color, damage
+    });
+}
+
+function checkCollisions() {
+    // Enzymes vs Microplastics
+    for (let i = enzymes.length - 1; i >= 0; i--) {
+        for (let j = microplastics.length - 1; j >= 0; j--) {
+            const e = enzymes[i];
+            const m = microplastics[j];
+            if (!e || !m) continue;
+
+            if (Math.hypot(e.x - m.x, e.y - m.y) < m.size + e.size) {
+                m.hp -= e.damage;
+                enzymes.splice(i, 1);
+
+                effects.push({
+                    x: m.x, y: m.y,
+                    type: 'sparkle',
+                    color: e.color,
+                    alpha: 1,
+                    radius: 0
+                });
+
+                if (m.hp <= 0) {
+                    playSound('destroy');
+                    score += m.points * level;
+                    effects.push({
+                        x: m.x, y: m.y,
+                        type: 'explosion',
+                        color: m.color,
+                        alpha: 1,
+                        radius: 5
+                    });
+                    effects.push({
+                        x: m.x, y: m.y - 20,
+                        type: 'text',
+                        color: '#4ecdc4',
+                        text: '+' + (m.points * level),
+                        alpha: 1,
+                        radius: 0
+                    });
+                    microplastics.splice(j, 1);
+                } else {
+                    playSound('hit');
+                }
+                break;
+            }
+        }
+    }
+
+    // Microplastics vs Cell
+    const cellX = canvas.width / 2;
+    const cellY = canvas.height - 60;
+    for (let i = microplastics.length - 1; i >= 0; i--) {
+        const m = microplastics[i];
+        if (Math.hypot(m.x - cellX, m.y - cellY) < 40 + m.size) {
+            health -= 8 + level;
+            playSound('damage');
+            effects.push({
+                x: m.x, y: m.y,
+                type: 'explosion',
+                color: '#ff4757',
+                alpha: 1,
+                radius: 5
+            });
+            microplastics.splice(i, 1);
+            if (health <= 0) {
+                health = 0;
+                gameOver();
+            }
+        }
+    }
+
+    // PowerUps vs Cell (proximity)
+    for (let i = powerUps.length - 1; i >= 0; i--) {
+        const p = powerUps[i];
+        if (Math.hypot(p.x - cellX, p.y - cellY) < 60) {
+            activatePowerUp(p);
+            powerUps.splice(i, 1);
+        }
+    }
+}
+
+function activatePowerUp(p) {
+    playSound('powerup');
+    effects.push({
+        x: p.x, y: p.y,
+        type: 'text',
+        color: p.color,
+        text: p.name + '!',
+        alpha: 1,
+        radius: 0
+    });
+
+    if (p.effect === 'heal') {
+        health = Math.min(100, health + 30);
+    } else {
+        enzymeType = p.effect;
+        document.getElementById('hud-enzyme').textContent = '⚡ Enzyme: ' + p.name;
+        setTimeout(() => {
+            enzymeType = 'standard';
+            document.getElementById('hud-enzyme').textContent = '⚡ Enzyme: Standard';
+        }, p.duration);
+    }
+}
+
+function updateGame() {
+    if (!gameRunning) return;
+
+    spawnTimer++;
+    if (spawnTimer >= Math.max(20, 60 - level * 5)) {
+        spawnMicroplastic();
+        spawnTimer = 0;
+    }
+
+    powerUpTimer++;
+    if (powerUpTimer >= 300) {
+        spawnPowerUp();
+        powerUpTimer = 0;
+    }
+
+    difficultyTimer++;
+    if (difficultyTimer >= 600) {
+        level++;
+        difficultyTimer = 0;
+        playSound('levelup');
+        effects.push({
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            type: 'text',
+            color: '#ffd32a',
+            text: '⚡ LEVEL ' + level + ' ⚡',
+            alpha: 1.5,
+            radius: 0
+        });
+    }
+
+    microplastics.forEach(m => {
+        m.x += m.vx;
+        m.y += m.vy;
+        m.rotation += m.rotSpeed;
+    });
+
+    enzymes.forEach(e => {
+        e.x += e.vx;
+        e.y += e.vy;
+    });
+
+    powerUps.forEach(p => {
+        p.y += p.vy;
+    });
+
+    effects.forEach(e => {
+        e.alpha -= 0.02;
+        e.radius += 1;
+        if (e.type === 'text') e.y -= 1;
+    });
+
+    enzymes = enzymes.filter(e =>
+        e.x > -20 && e.x < canvas.width + 20 &&
+        e.y > -20 && e.y < canvas.height + 20
+    );
+    microplastics = microplastics.filter(m => m.y < canvas.height + 50);
+    powerUps = powerUps.filter(p => p.y < canvas.height + 30);
+    effects = effects.filter(e => e.alpha > 0);
+
+    checkCollisions();
+
+    document.getElementById('hud-score').textContent = '🎯 Score: ' + score;
+    document.getElementById('hud-level').textContent = '🧪 Level: ' + level;
+    document.getElementById('hud-health').textContent =
+        '❤️ Cell Health: ' + Math.max(0, health) + '%';
+}
+
+function render() {
+    drawBackground();
+    drawCell();
+    microplastics.forEach(drawMicroplastic);
+    enzymes.forEach(drawEnzyme);
+    powerUps.forEach(drawPowerUp);
+    effects.forEach(drawEffect);
+}
+
+function gameLoop() {
+    updateGame();
+    render();
+    if (gameRunning) requestAnimationFrame(gameLoop);
+}
+
+// Shooting controls
+canvas.addEventListener('click', e => {
+    if (!gameRunning) return;
+    const r = canvas.getBoundingClientRect();
+    fireEnzyme(e.clientX - r.left, e.clientY - r.top);
+});
+
+canvas.addEventListener('touchstart', e => {
+    if (!gameRunning) return;
+    e.preventDefault();
+    const r = canvas.getBoundingClientRect();
+    const t = e.touches[0];
+    fireEnzyme(t.clientX - r.left, t.clientY - r.top);
+}, { passive: false });
+
+// ============ LEADERBOARD (localStorage) ============
+function getLeaderboard() {
+    try {
+        const raw = localStorage.getItem('microplastic_blaster_leaderboard');
+        return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+        return [];
+    }
+}
+
+function saveLeaderboard(lb) {
+    try {
+        localStorage.setItem('microplastic_blaster_leaderboard', JSON.stringify(lb));
+    } catch (e) {
+        // ignore quota / privacy errors
+    }
+}
+
+function addScoreToLeaderboard(score, level) {
+    const lb = getLeaderboard();
+    const entry = {
+        score,
+        level,
+        date: new Date().toISOString().slice(0, 10)
+    };
+    lb.push(entry);
+    lb.sort((a, b) => b.score - a.score);
+    const trimmed = lb.slice(0, 5);
+    saveLeaderboard(trimmed);
+    return trimmed;
+}
+
+function renderLeaderboard(containerId) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+
+    const lb = getLeaderboard();
+    if (!lb.length) {
+        el.innerHTML =
+            '<strong>Leaderboard</strong><br>' +
+            '<span style="font-size:0.8em;color:#a0a0d0;">' +
+            'No scores yet — be the first to set a record.' +
+            '</span>';
+        return;
+    }
+
+    let html =
+        '<strong>Leaderboard</strong><br>' +
+        '<table style="width:100%;margin-top:6px;font-size:0.8em;color:#c0c0e0;border-collapse:collapse;">' +
+        '<tr>' +
+        '<th style="text-align:left;">Rank</th>' +
+        '<th style="text-align:right;">Score</th>' +
+        '<th style="text-align:right;">Level</th>' +
+        '<th style="text-align:right;">Date</th>' +
+        '</tr>';
+
+    lb.forEach((e, i) => {
+        html +=
+            '<tr>' +
+            `<td>#${i + 1}</td>` +
+            `<td style="text-align:right;">${e.score}</td>` +
+            `<td style="text-align:right;">${e.level}</td>` +
+            `<td style="text-align:right;">${e.date}</td>` +
+            '</tr>';
+    });
+
+    html += '</table>';
+    el.innerHTML = html;
+}
+
+function startGame() {
+    initAudio();
+    score = 0;
+    health = 100;
+    level = 1;
+    enzymeType = 'standard';
+    enzymePower = 1;
+    microplastics = [];
+    enzymes = [];
+    powerUps = [];
+    effects = [];
+    spawnTimer = 0;
+    powerUpTimer = 0;
+    difficultyTimer = 0;
+
+    document.getElementById('start-screen').style.display = 'none';
+    document.getElementById('game-over-screen').style.display = 'none';
+    document.getElementById('hud').style.display = 'flex';
+    document.getElementById('hud-enzyme').textContent = '⚡ Enzyme: Standard';
+
+    gameRunning = true;
+    gameLoop();
+}
+
+function gameOver() {
+    gameRunning = false;
+    playSound('gameover');
+    document.getElementById('hud').style.display = 'none';
+    document.getElementById('game-over-screen').style.display = 'block';
+    document.getElementById('final-score').textContent = score;
+    document.getElementById('level-reached').textContent = 'Reached Level ' + level;
+    document.getElementById('end-fact').innerHTML =
+        '<strong>🔬 Plastic Fact:</strong> ' +
+        FACTS[Math.floor(Math.random() * FACTS.length)];
+
+    addScoreToLeaderboard(score, level);
+    renderLeaderboard('leaderboard');
+}
+
+// Initial render
+render();
+</script>
+</body>
+</html>
