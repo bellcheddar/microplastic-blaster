@@ -4,6 +4,16 @@
 
 A browser-based arcade game by [Elora Therapeutics](https://www.eloratherapeutics.com) — the biotech developing first-in-class enzyme therapy to remove microplastics from the human body. Fire enzymatic blasts at incoming polymer particles, protect the cell, and climb the global leaderboard.
 
+![type](https://img.shields.io/badge/type-single--file%20HTML-E34F26?logo=html5&logoColor=white) ![by](https://img.shields.io/badge/by-Elora%20Therapeutics-1C244B) ![leaderboard](https://img.shields.io/badge/leaderboard-Firebase-FFCA28?logo=firebase&logoColor=white) ![play](https://img.shields.io/badge/play-in%20browser-467FF7) ![author](https://img.shields.io/badge/author-Marc%20C.%20Deller%2C%20D.Phil.-1C244B)
+
+<table>
+<tr>
+<td>🌐 <b>Website</b></td><td><a href="https://marcdeller.com" target="_blank" rel="noopener noreferrer">marcdeller.com</a></td>
+<td>✉️ <b>Contact</b></td><td><a href="mailto:marc@marcdeller.com">marc@marcdeller.com</a></td>
+<td>🐙 <b>GitHub</b></td><td><a href="https://github.com/bellcheddar/microplastic-blaster" target="_blank" rel="noopener noreferrer">bellcheddar/microplastic-blaster</a></td>
+</tr>
+</table>
+
 ---
 
 ## 🎮 Gameplay
@@ -147,3 +157,18 @@ Elora Therapeutics is developing the first FDA-targeted enzyme therapeutic — b
 ## 📄 Licence
 
 © Elora Therapeutics. All rights reserved. Assets (logos, avatars, audio) are proprietary. The game logic may be adapted for educational or awareness purposes with attribution.
+
+---
+
+## 👤 Author
+
+**Marc C. Deller, D.Phil.**  
+Structural biologist & drug discovery scientist  
+
+<table>
+<tr>
+<td>🌐</td><td><a href="https://marcdeller.com" target="_blank" rel="noopener noreferrer">marcdeller.com</a></td>
+<td>✉️</td><td><a href="mailto:marc@marcdeller.com">marc@marcdeller.com</a></td>
+<td>🐙</td><td><a href="https://github.com/bellcheddar/microplastic-blaster" target="_blank" rel="noopener noreferrer">github.com/bellcheddar/microplastic-blaster</a></td>
+</tr>
+</table>
